@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If praxis-eval supports your research or product work, please cite it using this metadata."
+title: "praxis-eval"
+authors:
+  - family-names: Liu
+    given-names: Chaoqi
+repository-code: "https://github.com/Chaoqi-LIU/praxis-eval"
+license: Apache-2.0
+version: 0.1.0
