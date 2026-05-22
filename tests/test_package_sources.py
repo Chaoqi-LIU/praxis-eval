@@ -120,8 +120,8 @@ def test_runtime_setup_fallback_constants_are_release_specs(monkeypatch):
     assert sources.praxis_remote_install(None) == [
         sources.PRAXIS_REMOTE_FALLBACK_INSTALL
     ]
-    assert sources.PRAXIS_EVAL_FALLBACK_INSTALL == "praxis-eval==0.1.0"
-    assert sources.PRAXIS_REMOTE_FALLBACK_INSTALL == "praxis-remote==0.1.0"
+    assert sources.PRAXIS_EVAL_FALLBACK_INSTALL == "praxis-eval==0.1.1"
+    assert sources.PRAXIS_REMOTE_FALLBACK_INSTALL == "praxis-remote>=0.1.0,<0.2.0"
 
 
 def test_runtime_setup_reads_env_specs_from_published_distributions():

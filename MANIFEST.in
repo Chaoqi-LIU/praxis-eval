@@ -1,0 +1,3 @@
+include CITATION.cff
+recursive-include tests *.py
+global-exclude *.py[cod] __pycache__

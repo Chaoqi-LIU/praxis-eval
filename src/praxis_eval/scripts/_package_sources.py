@@ -11,9 +11,9 @@ from importlib.metadata import PackageNotFoundError, distribution
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-PRAXIS_REMOTE_FALLBACK_INSTALL = "praxis-remote==0.1.0"
+PRAXIS_REMOTE_FALLBACK_INSTALL = "praxis-remote>=0.1.0,<0.2.0"
 
-PRAXIS_EVAL_FALLBACK_INSTALL = "praxis-eval==0.1.0"
+PRAXIS_EVAL_FALLBACK_INSTALL = "praxis-eval==0.1.1"
 
 
 def project_root() -> Path | None:

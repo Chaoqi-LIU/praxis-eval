@@ -22,7 +22,7 @@ inside the caller.
 Install the core package from PyPI:
 
 ```bash
-pip install praxis-eval==0.1.0
+pip install praxis-eval==0.1.1
 ```
 
 The core package contains the public API, contracts, registry, result types,
@@ -30,13 +30,13 @@ setup/verify dispatchers, and local policy adapter. Install benchmark extras
 for the simulator families you plan to run:
 
 ```bash
-pip install "praxis-eval[remote]==0.1.0"
-pip install "praxis-eval[libero]==0.1.0"
-pip install "praxis-eval[metaworld]==0.1.0"
-pip install "praxis-eval[robocasa]==0.1.0"
-pip install "praxis-eval[robomimic]==0.1.0"
-pip install "praxis-eval[simpler]==0.1.0"
-pip install "praxis-eval[mshab]==0.1.0"
+pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[libero]==0.1.1"
+pip install "praxis-eval[metaworld]==0.1.1"
+pip install "praxis-eval[robocasa]==0.1.1"
+pip install "praxis-eval[robomimic]==0.1.1"
+pip install "praxis-eval[simpler]==0.1.1"
+pip install "praxis-eval[mshab]==0.1.1"
 ```
 
 Use the source install when you need the current `main` branch before the next
@@ -71,7 +71,7 @@ runtime environments outside the source tree.
 
 | Extra | Installs | Runtime model |
 | --- | --- | --- |
-| `remote` | `praxis-remote==0.1.0` | Optional gRPC policy client. |
+| `remote` | `praxis-remote>=0.1.0,<0.2.0` | Optional gRPC policy client. |
 | `libero` | `praxis-libero`, `praxis-robosuite` | Runs in the current Python environment. |
 | `metaworld` | LeRobot Meta-World dependencies | Runs in the current Python environment. |
 | `robocasa` | `praxis-robocasa`, `praxis-robosuite` | Runs in the current Python environment after asset setup. |
@@ -100,7 +100,7 @@ RoboCasa setup downloads kitchen assets and writes `robocasa/macros_private.py`
 with the dataset root used by RoboCasa:
 
 ```bash
-pip install "praxis-eval[robocasa]==0.1.0"
+pip install "praxis-eval[robocasa]==0.1.1"
 praxis-eval-setup robocasa
 praxis-eval-setup robocasa --dataset-base-path /data/robocasa
 praxis-eval-setup robocasa --skip-download
@@ -112,7 +112,7 @@ runtime packages into that environment, downloads ManiSkill assets, and writes
 activation hooks for Vulkan/EGL and `MS_ASSET_DIR`:
 
 ```bash
-pip install "praxis-eval[simpler]==0.1.0"
+pip install "praxis-eval[simpler]==0.1.1"
 praxis-eval-setup simpler
 praxis-eval-setup simpler --env-manager micromamba --env-name simpler-praxis
 praxis-eval-setup simpler --ms-asset-dir /data/simpler/maniskill_assets
@@ -123,7 +123,7 @@ MS-HAB setup follows the same model using the env spec shipped inside
 `praxis-mshab`:
 
 ```bash
-pip install "praxis-eval[mshab]==0.1.0"
+pip install "praxis-eval[mshab]==0.1.1"
 praxis-eval-setup mshab
 praxis-eval-setup mshab --env-manager micromamba --env-name mshab-praxis
 praxis-eval-setup mshab --ms-asset-dir /data/mshab/maniskill_assets
@@ -356,7 +356,7 @@ to know the documented observation keys and action format.
 Install the remote extra and run a policy server with `praxis-remote`:
 
 ```bash
-pip install "praxis-eval[remote]==0.1.0"
+pip install "praxis-eval[remote]==0.1.1"
 ```
 
 Then evaluate through `RemotePolicy`:

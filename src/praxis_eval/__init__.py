@@ -4,6 +4,8 @@
 
 """Standalone robot-policy evaluation harness."""
 
+from importlib.metadata import PackageNotFoundError, version
+
 from praxis_eval.api import evaluate
 from praxis_eval.contracts import ActionSpec, EnvContract, ObservationKey
 from praxis_eval.evaluation.config import (
@@ -36,6 +38,11 @@ from praxis_eval.types import (
     Policy,
 )
 
+try:
+    __version__ = version("praxis-eval")
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
+
 __all__ = [
     "ActionSpec",
     "EnvContract",
@@ -49,6 +56,7 @@ __all__ = [
     "ObservationKey",
     "Policy",
     "RemotePolicy",
+    "__version__",
     "available_drivers",
     "build_eval_overrides_from_train_config",
     "env_kwargs_without_type_task",

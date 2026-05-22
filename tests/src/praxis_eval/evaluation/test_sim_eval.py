@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 import torch
 
+from praxis_eval.contracts import ActionSpec
 from praxis_eval.envs.eval_pool import EvalPoolHandle
 from praxis_eval.evaluation.sim import (
     LocalPolicyAdapter,
@@ -118,6 +119,7 @@ class _RecordingPolicy(_TinyPolicy):
     def __init__(self):
         super().__init__()
         self.observations = None
+        self.action_spec = None
 
     def act(
         self,
@@ -128,6 +130,7 @@ class _RecordingPolicy(_TinyPolicy):
         episode_ids=None,
     ) -> np.ndarray:
         self.observations = list(observations)
+        self.action_spec = action_spec
         return super().act(
             observations,
             action_spec=action_spec,
@@ -148,6 +151,26 @@ class _BadActionPolicy(_TinyPolicy):
         _ = (action_spec, episode_ids)
         self.last_kwargs = dict(policy_kwargs or {})
         action = np.array([float("nan"), 2.5], dtype=np.float32)
+        return np.repeat(action[None, :], len(observations), axis=0)
+
+
+class _OutOfBoundsActionPolicy(_TinyPolicy):
+    def __init__(self):
+        super().__init__()
+        self.action_spec = None
+
+    def act(
+        self,
+        observations,
+        *,
+        action_spec=None,
+        policy_kwargs=None,
+        episode_ids=None,
+    ) -> np.ndarray:
+        _ = episode_ids
+        self.action_spec = action_spec
+        self.last_kwargs = dict(policy_kwargs or {})
+        action = np.array([1.25, -1.25], dtype=np.float32)
         return np.repeat(action[None, :], len(observations), axis=0)
 
 
@@ -495,6 +518,66 @@ class TestSimEval:
         assert policy.observations[1]["metadata.score"] == 2.5
         assert policy.observations[1]["metadata.done"] is True
         assert policy.observations[1]["task"] == "right"
+
+    def test_local_policy_adapter_broadcasts_scalar_metadata_before_batch_keys(self):
+        policy = _RecordingPolicy()
+        adapter = LocalPolicyAdapter(policy=policy, device="cpu")
+        batch = {
+            "metadata.source": "rollout",
+            "task": ["left", "right"],
+            "observation.state": torch.zeros((2, 2), dtype=torch.float32),
+        }
+
+        action = adapter.select_action(batch)
+
+        assert action.shape == (2, 2)
+        assert policy.observations is not None
+        assert [obs["metadata.source"] for obs in policy.observations] == [
+            "rollout",
+            "rollout",
+        ]
+        assert [obs["task"] for obs in policy.observations] == ["left", "right"]
+
+    def test_local_policy_adapter_rejects_inconsistent_observation_batch_sizes(self):
+        policy = _TinyPolicy()
+        adapter = LocalPolicyAdapter(policy=policy, device="cpu")
+        batch = {
+            "task": ["left", "right"],
+            "observation.state": torch.zeros((3, 2), dtype=torch.float32),
+        }
+
+        with pytest.raises(ValueError, match="Inconsistent observation batch sizes"):
+            adapter.select_action(batch)
+
+    def test_local_policy_adapter_rejects_zero_dimensional_observation_arrays(self):
+        policy = _TinyPolicy()
+        adapter = LocalPolicyAdapter(policy=policy, device="cpu")
+
+        with pytest.raises(ValueError, match="zero-dimensional tensor"):
+            adapter.select_action({"observation.state": torch.tensor(1.0)})
+        with pytest.raises(ValueError, match="zero-dimensional numpy array"):
+            adapter.select_action({"observation.state": np.array(1.0)})
+
+    def test_local_policy_adapter_leaves_finite_action_bounds_to_rollout_sanitizer(
+        self,
+    ):
+        policy = _OutOfBoundsActionPolicy()
+        adapter = LocalPolicyAdapter(
+            policy=policy,
+            device="cpu",
+            action_spec=ActionSpec(
+                shape=(2,), dtype="float32", minimum=-1.0, maximum=1.0
+            ),
+        )
+
+        action = adapter.select_action(
+            {"observation.state": torch.zeros((1, 2), dtype=torch.float32)}
+        )
+
+        assert policy.action_spec is adapter.action_spec
+        np.testing.assert_allclose(
+            action.numpy(), np.array([[1.25, -1.25]], dtype=np.float32)
+        )
 
     def test_local_policy_adapter_ignores_rollout_bookkeeping_fields(self):
         policy = _RecordingPolicy()
@@ -1127,3 +1210,19 @@ class TestSimEval:
             env.close()
 
         assert actions == []
+
+    def test_rollout_compat_clips_out_of_bounds_actions_before_step(self):
+        env = gym.vector.SyncVectorEnv(
+            [lambda: _RecordingTinyEnv(success_at=1, task_desc="tiny")],
+            autoreset_mode=gym.vector.AutoresetMode.SAME_STEP,
+        )
+        policy = LocalPolicyAdapter(policy=_OutOfBoundsActionPolicy(), device="cpu")
+
+        try:
+            rollout_compat.evaluate_policy_on_pooled_env(env=env, policy=policy)
+            actions = list(env.envs[0].actions)
+        finally:
+            env.close()
+
+        assert len(actions) == 1
+        np.testing.assert_allclose(actions[0], np.array([1.0, -1.0], dtype=np.float32))

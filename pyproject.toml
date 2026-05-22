@@ -4,16 +4,50 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "praxis-eval"
-version = "0.1.0"
+version = "0.1.1"
 description = "Standalone robot-policy evaluation harness with local and remote policy adapters."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
+authors = [
+    { name = "Chaoqi Liu" },
+    { email = "liuchaoqi730@gmail.com" },
+]
+maintainers = [
+    { name = "Chaoqi Liu" },
+    { email = "liuchaoqi730@gmail.com" },
+]
+keywords = [
+    "robotics",
+    "evaluation",
+    "simulation",
+    "policy",
+    "benchmark",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "numpy>=1.26.0",
     "omegaconf>=2.3.0",
 ]
+
+[project.urls]
+Homepage = "https://chaoqi-liu.com"
+Source = "https://github.com/Chaoqi-LIU/praxis-eval"
+Issues = "https://github.com/Chaoqi-LIU/praxis-eval/issues"
+Documentation = "https://github.com/Chaoqi-LIU/praxis-eval#readme"
 
 [project.scripts]
 praxis-eval-setup = "praxis_eval.scripts.setup:main"
@@ -26,7 +60,7 @@ dev = [
     "omegaconf>=2.3.0",
     "pre-commit>=4.0.0",
     "pytest>=8.0.0",
-    "praxis-remote==0.1.0",
+    "praxis-remote>=0.1.0,<0.2.0",
     "praxis-simpler==0.0.1.post2",
     "praxis-mshab==0.0.1.post2",
     "pyyaml>=6.0.0",
@@ -35,7 +69,7 @@ dev = [
     "tqdm>=4.66.0",
 ]
 remote = [
-    "praxis-remote==0.1.0",
+    "praxis-remote>=0.1.0,<0.2.0",
 ]
 libero = [
     "gymnasium>=1.0.0",
@@ -78,14 +112,14 @@ robomimic = [
 simpler = [
     "lerobot==0.4.4",
     "omegaconf>=2.3.0",
-    "praxis-remote==0.1.0",
+    "praxis-remote>=0.1.0,<0.2.0",
     "praxis-simpler==0.0.1.post2",
     "tqdm>=4.66.0",
 ]
 mshab = [
     "lerobot==0.4.4",
     "omegaconf>=2.3.0",
-    "praxis-remote==0.1.0",
+    "praxis-remote>=0.1.0,<0.2.0",
     "praxis-mshab==0.0.1.post2",
     "tqdm>=4.66.0",
 ]
@@ -93,7 +127,7 @@ all = [
     "gymnasium>=1.0.0",
     "lerobot[metaworld]==0.4.4",
     "omegaconf>=2.3.0",
-    "praxis-remote==0.1.0",
+    "praxis-remote>=0.1.0,<0.2.0",
     "pyyaml>=6.0.0",
     "praxis-robosuite==1.5.2",
     "praxis-libero==0.1.1",

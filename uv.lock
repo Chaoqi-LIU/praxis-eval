@@ -3050,7 +3050,7 @@ wheels = [
 
 [[package]]
 name = "praxis-eval"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
@@ -3183,11 +3183,11 @@ requires-dist = [
     { name = "praxis-mshab", marker = "extra == 'all'", specifier = "==0.0.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'dev'", specifier = "==0.0.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'mshab'", specifier = "==0.0.1.post2" },
-    { name = "praxis-remote", marker = "extra == 'all'", specifier = "==0.1.0" },
-    { name = "praxis-remote", marker = "extra == 'dev'", specifier = "==0.1.0" },
-    { name = "praxis-remote", marker = "extra == 'mshab'", specifier = "==0.1.0" },
-    { name = "praxis-remote", marker = "extra == 'remote'", specifier = "==0.1.0" },
-    { name = "praxis-remote", marker = "extra == 'simpler'", specifier = "==0.1.0" },
+    { name = "praxis-remote", marker = "extra == 'all'", specifier = ">=0.1.0,<0.2.0" },
+    { name = "praxis-remote", marker = "extra == 'dev'", specifier = ">=0.1.0,<0.2.0" },
+    { name = "praxis-remote", marker = "extra == 'mshab'", specifier = ">=0.1.0,<0.2.0" },
+    { name = "praxis-remote", marker = "extra == 'remote'", specifier = ">=0.1.0,<0.2.0" },
+    { name = "praxis-remote", marker = "extra == 'simpler'", specifier = ">=0.1.0,<0.2.0" },
     { name = "praxis-robocasa", marker = "extra == 'all'", specifier = "==1.0.0" },
     { name = "praxis-robocasa", marker = "extra == 'robocasa'", specifier = "==1.0.0" },
     { name = "praxis-robosuite", marker = "extra == 'all'", specifier = "==1.5.2" },
