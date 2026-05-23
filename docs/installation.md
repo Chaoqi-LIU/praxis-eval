@@ -5,7 +5,7 @@
 Install the core package:
 
 ```bash
-pip install praxis-eval==0.1.1
+pip install praxis-eval
 ```
 
 The core install includes the public API, contracts, registry, result types, setup/verify dispatchers, and local policy adapter. It does not install heavy simulator stacks.
@@ -15,13 +15,13 @@ The core install includes the public API, contracts, registry, result types, set
 Install extras for the benchmark families you plan to run:
 
 ```bash
-pip install "praxis-eval[libero]==0.1.1"
-pip install "praxis-eval[robocasa]==0.1.1"
-pip install "praxis-eval[robomimic]==0.1.1"
-pip install "praxis-eval[metaworld]==0.1.1"
-pip install "praxis-eval[simpler]==0.1.1"
-pip install "praxis-eval[mshab]==0.1.1"
-pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[libero]"
+pip install "praxis-eval[robocasa]"
+pip install "praxis-eval[robomimic]"
+pip install "praxis-eval[metaworld]"
+pip install "praxis-eval[simpler]"
+pip install "praxis-eval[mshab]"
+pip install "praxis-eval[remote]"
 ```
 
 | Extra | Adds | Notes |

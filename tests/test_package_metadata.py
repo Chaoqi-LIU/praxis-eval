@@ -7,7 +7,7 @@ from importlib.metadata import metadata, version
 import praxis_eval
 
 PACKAGE_NAME = "praxis-eval"
-EXPECTED_VERSION = "0.1.1"
+EXPECTED_VERSION = "0.1.2"
 EXPECTED_EMAIL = "liuchaoqi730@gmail.com"
 EXPECTED_HOMEPAGE = "https://chaoqi-liu.com"
 EXPECTED_SOURCE = "https://github.com/Chaoqi-LIU/praxis-eval"

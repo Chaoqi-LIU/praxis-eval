@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "praxis-eval"
-version = "0.1.1"
+version = "0.1.2"
 description = "Standalone robot-policy evaluation harness with local and remote policy adapters."
 readme = "README.md"
 requires-python = ">=3.10"

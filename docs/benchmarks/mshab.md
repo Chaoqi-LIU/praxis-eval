@@ -5,7 +5,7 @@ MS-HAB is evaluated through a dedicated runtime. The caller's policy environment
 ## Install
 
 ```bash
-pip install "praxis-eval[mshab]==0.1.1"
+pip install "praxis-eval[mshab]"
 ```
 
 This extra installs `praxis-mshab` and `praxis-remote` in the caller environment. The simulator itself usually runs in a dedicated conda or micromamba environment created by setup.

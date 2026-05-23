@@ -5,7 +5,7 @@ RoboCasa runs in the current Python environment and requires RoboCasa kitchen as
 ## Install
 
 ```bash
-pip install "praxis-eval[robocasa]==0.1.1"
+pip install "praxis-eval[robocasa]"
 ```
 
 ## Setup

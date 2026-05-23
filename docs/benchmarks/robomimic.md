@@ -5,7 +5,7 @@ RoboMimic runs robosuite tasks in the current Python environment.
 ## Install
 
 ```bash
-pip install "praxis-eval[robomimic]==0.1.1"
+pip install "praxis-eval[robomimic]"
 ```
 
 There is no `praxis-eval-setup robomimic` command.

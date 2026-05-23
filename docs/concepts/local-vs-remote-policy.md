@@ -37,7 +37,7 @@ Remote mode is useful when:
 Install the remote extra only when needed:
 
 ```bash
-pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[remote]"
 ```
 
 `praxis-remote` is optional transport, not a required part of the core evaluator.

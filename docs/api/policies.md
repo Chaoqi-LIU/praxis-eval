@@ -48,7 +48,7 @@ policy = RemotePolicy("127.0.0.1:50051", timeout=30.0)
 `RemotePolicy` calls a `praxis-remote` policy server. Install it with:
 
 ```bash
-pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[remote]"
 ```
 
 Remote mode is optional. It is useful when the simulator runtime and policy runtime need different dependency stacks.

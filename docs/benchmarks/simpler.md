@@ -5,7 +5,7 @@ SimplerEnv is evaluated through a dedicated runtime. The caller's policy environ
 ## Install
 
 ```bash
-pip install "praxis-eval[simpler]==0.1.1"
+pip install "praxis-eval[simpler]"
 ```
 
 This extra installs `praxis-simpler` and `praxis-remote` in the caller environment. The simulator itself usually runs in a dedicated conda or micromamba environment created by setup.

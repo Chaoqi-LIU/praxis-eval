@@ -5,7 +5,7 @@ Remote evaluation uses `praxis-remote` to keep the evaluator and policy runtime 
 Install the optional transport:
 
 ```bash
-pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[remote]"
 ```
 
 On the evaluator side:

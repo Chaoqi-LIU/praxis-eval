@@ -7,19 +7,19 @@
 `praxis-eval` supports Python 3.10 and newer.
 
 ```bash
-pip install praxis-eval==0.1.1
+pip install praxis-eval
 ```
 
 Install the benchmark extras you plan to run:
 
 ```bash
-pip install "praxis-eval[libero]==0.1.1"
-pip install "praxis-eval[robocasa]==0.1.1"
-pip install "praxis-eval[robomimic]==0.1.1"
-pip install "praxis-eval[metaworld]==0.1.1"
-pip install "praxis-eval[simpler]==0.1.1"
-pip install "praxis-eval[mshab]==0.1.1"
-pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[libero]"
+pip install "praxis-eval[robocasa]"
+pip install "praxis-eval[robomimic]"
+pip install "praxis-eval[metaworld]"
+pip install "praxis-eval[simpler]"
+pip install "praxis-eval[mshab]"
+pip install "praxis-eval[remote]"
 ```
 
 ## Minimal Local Evaluation

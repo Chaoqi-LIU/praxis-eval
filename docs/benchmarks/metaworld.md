@@ -5,7 +5,7 @@ MetaWorld runs in the current Python environment through LeRobot's MetaWorld dep
 ## Install
 
 ```bash
-pip install "praxis-eval[metaworld]==0.1.1"
+pip install "praxis-eval[metaworld]"
 ```
 
 There is no `praxis-eval-setup metaworld` command.

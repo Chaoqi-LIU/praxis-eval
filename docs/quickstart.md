@@ -3,8 +3,8 @@
 Install the core package and one benchmark extra:
 
 ```bash
-pip install praxis-eval==0.1.1
-pip install "praxis-eval[libero]==0.1.1"
+pip install praxis-eval
+pip install "praxis-eval[libero]"
 ```
 
 Inspect the benchmark contract before writing a policy adapter:
@@ -58,7 +58,7 @@ print(result.artifacts["results_path"])
 For remote serving, install the remote extra and pass a `RemotePolicy`:
 
 ```bash
-pip install "praxis-eval[remote]==0.1.1"
+pip install "praxis-eval[remote]"
 ```
 
 ```python

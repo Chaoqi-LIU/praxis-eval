@@ -31,7 +31,7 @@ class RemotePolicy:
         except ImportError as exc:  # pragma: no cover - user setup branch
             raise ImportError(
                 "RemotePolicy requires praxis-remote. Install with "
-                "`pip install 'praxis-eval[remote]==0.1.1'`."
+                "`pip install 'praxis-eval[remote]'`."
             ) from exc
 
         host, port = self.address.rsplit(":", 1)

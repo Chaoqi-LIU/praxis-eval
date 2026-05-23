@@ -5,7 +5,7 @@ LIBERO runs in the current Python environment through the `praxis-libero` and `p
 ## Install
 
 ```bash
-pip install "praxis-eval[libero]==0.1.1"
+pip install "praxis-eval[libero]"
 ```
 
 LIBERO config is written under `.tmp/libero_config` by the evaluator when needed. There is no `praxis-eval-setup libero` command.
