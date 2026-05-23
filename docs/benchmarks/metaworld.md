@@ -56,7 +56,7 @@ Policy-facing keys:
 | Key | Shape / dtype | Notes |
 | --- | --- | --- |
 | `task` | `str` | Task instruction from LeRobot MetaWorld metadata. |
-| `observation.images.<camera>` | `(3, H, W)`, `uint8` or `float32` | Public contract. Default config maps MetaWorld pixels through LeRobot's image key. |
+| `observation.images.corner2` | `(3, H, W)`, `uint8` or `float32` | Default image key. Custom `camera_name` values use `observation.images.<camera_name>`. |
 | `observation.state` | `(4,)`, `float32` or `float64` | First 4 elements of the raw MetaWorld observation when `obs_type="pixels_agent_pos"`. |
 
 Set `obs_type="pixels"` to omit agent position state.

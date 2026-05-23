@@ -30,6 +30,7 @@ class _DummyMetaworldEnv(gym.Env):
         self,
         *,
         obs_type: str = "pixels_agent_pos",
+        camera_name: str = "corner2",
         observation_height: int = 480,
         observation_width: int = 480,
     ) -> None:
@@ -39,6 +40,7 @@ class _DummyMetaworldEnv(gym.Env):
             obs_type=obs_type,
             observation_height=observation_height,
             observation_width=observation_width,
+            camera_name=camera_name,
         )
         self.action_space = make_action_space()
 
@@ -55,6 +57,7 @@ class _DummyMetaworldEnv(gym.Env):
 def make_dummy_metaworld_env_fn(
     *,
     obs_type: str = "pixels_agent_pos",
+    camera_name: str = "corner2",
     observation_height: int = 480,
     observation_width: int = 480,
 ) -> Callable[[], _DummyMetaworldEnv]:
@@ -62,6 +65,7 @@ def make_dummy_metaworld_env_fn(
     return partial(
         _DummyMetaworldEnv,
         obs_type=obs_type,
+        camera_name=camera_name,
         observation_height=observation_height,
         observation_width=observation_width,
     )

@@ -30,6 +30,7 @@ def make_observation_space(
     obs_type: str,
     observation_height: int,
     observation_width: int,
+    camera_name: str = "corner2",
 ) -> spaces.Dict:
     pixel_space = spaces.Box(
         low=0,
@@ -37,12 +38,13 @@ def make_observation_space(
         shape=(int(observation_height), int(observation_width), 3),
         dtype=np.uint8,
     )
+    pixels_space = spaces.Dict({str(camera_name): pixel_space})
     if obs_type == "pixels":
-        return spaces.Dict({"pixels": pixel_space})
+        return spaces.Dict({"pixels": pixels_space})
     if obs_type == "pixels_agent_pos":
         return spaces.Dict(
             {
-                "pixels": pixel_space,
+                "pixels": pixels_space,
                 "agent_pos": spaces.Box(
                     low=-1000.0,
                     high=1000.0,
@@ -100,6 +102,7 @@ class MetaworldEnv(gym.Env):
             obs_type=self.obs_type,
             observation_height=self.observation_height,
             observation_width=self.observation_width,
+            camera_name=self.camera_name,
         )
         self.action_space = make_action_space()
         self._env: Any | None = None
@@ -202,12 +205,13 @@ class MetaworldEnv(gym.Env):
             raise ValueError(f"Unsupported MetaWorld obs_type: {self.obs_type!r}.")
 
         image = self.render().copy()
+        pixels = {self.camera_name: image}
         if self.obs_type == "pixels":
-            return {"pixels": image}
+            return {"pixels": pixels}
 
         raw_obs_array = np.asarray(raw_obs)
         return {
-            "pixels": image,
+            "pixels": pixels,
             "agent_pos": raw_obs_array[:OBS_DIM],
         }
 

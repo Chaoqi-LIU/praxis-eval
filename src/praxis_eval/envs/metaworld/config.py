@@ -10,31 +10,46 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 from lerobot.configs.types import FeatureType, PolicyFeature
-from lerobot.utils.constants import ACTION, OBS_IMAGE, OBS_STATE
+from lerobot.utils.constants import ACTION, OBS_IMAGES, OBS_STATE
 
 from praxis_eval.envs.metaworld.spec import resolve_episode_length
 
 
+def _metaworld_pixel_feature_key(camera_name: str) -> str:
+    return f"pixels/{camera_name}"
+
+
 def _default_features(
+    *,
+    obs_type: str,
+    camera_name: str,
     observation_height: int = 480,
     observation_width: int = 480,
 ) -> dict[str, PolicyFeature]:
-    return {
+    if obs_type not in {"pixels", "pixels_agent_pos"}:
+        raise ValueError(f"Unsupported MetaWorld obs_type: {obs_type!r}.")
+    features = {
         ACTION: PolicyFeature(type=FeatureType.ACTION, shape=(4,)),
-        "agent_pos": PolicyFeature(type=FeatureType.STATE, shape=(4,)),
-        "pixels/top": PolicyFeature(
+        _metaworld_pixel_feature_key(camera_name): PolicyFeature(
             type=FeatureType.VISUAL,
             shape=(int(observation_height), int(observation_width), 3),
         ),
     }
+    if obs_type == "pixels_agent_pos":
+        features["agent_pos"] = PolicyFeature(type=FeatureType.STATE, shape=(4,))
+    return features
 
 
-def _default_features_map() -> dict[str, str]:
-    return {
+def _default_features_map(*, obs_type: str, camera_name: str) -> dict[str, str]:
+    if obs_type not in {"pixels", "pixels_agent_pos"}:
+        raise ValueError(f"Unsupported MetaWorld obs_type: {obs_type!r}.")
+    features_map = {
         ACTION: ACTION,
-        "agent_pos": OBS_STATE,
-        "pixels/top": OBS_IMAGE,
+        _metaworld_pixel_feature_key(camera_name): f"{OBS_IMAGES}.{camera_name}",
     }
+    if obs_type == "pixels_agent_pos":
+        features_map["agent_pos"] = OBS_STATE
+    return features_map
 
 
 @dataclass
@@ -55,7 +70,7 @@ class MetaworldEnvConfig:
     visualization_height: int = 480
     visualization_width: int = 640
     features: dict[str, PolicyFeature] = field(default_factory=dict)
-    features_map: dict[str, str] = field(default_factory=_default_features_map)
+    features_map: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.obs_type not in {"pixels", "pixels_agent_pos"}:
@@ -64,12 +79,16 @@ class MetaworldEnvConfig:
             self.episode_length = resolve_episode_length(self.episode_length)
         if not self.features:
             self.features = _default_features(
+                obs_type=self.obs_type,
+                camera_name=self.camera_name,
                 observation_height=int(self.observation_height),
                 observation_width=int(self.observation_width),
             )
-            if self.obs_type == "pixels":
-                self.features.pop("agent_pos", None)
-                self.features_map.pop("agent_pos", None)
+        if not self.features_map:
+            self.features_map = _default_features_map(
+                obs_type=self.obs_type,
+                camera_name=self.camera_name,
+            )
 
     @property
     def gym_kwargs(self) -> dict[str, Any]:

@@ -20,7 +20,7 @@ CONTRACT = EnvContract(
             "observation.images.<camera>",
             "uint8|float32",
             shape=("C", "H", "W"),
-            description="Optional RGB camera image.",
+            description="RGB camera image keyed by camera_name.",
         ),
     ),
     action=ActionSpec(

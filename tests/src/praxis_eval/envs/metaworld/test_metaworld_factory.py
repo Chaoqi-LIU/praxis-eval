@@ -91,7 +91,25 @@ class TestMetaworldFactoryRegistration:
         assert cfg.task == "mt50"
         assert cfg.observation_height == 96
         assert cfg.observation_width == 96
-        assert cfg.features["pixels/top"].shape == (96, 96, 3)
+        assert cfg.features["pixels/corner2"].shape == (96, 96, 3)
+        assert cfg.features_map["pixels/corner2"] == "observation.images.corner2"
+
+    def test_build_env_config_uses_custom_camera_name_in_feature_map(self) -> None:
+        cfg = build_env_config(
+            {
+                "type": "metaworld",
+                "task": "mt50",
+                "camera_name": "corner3",
+                "obs_type": "pixels",
+            }
+        )
+
+        assert cfg.features["pixels/corner3"].shape == (480, 480, 3)
+        assert "agent_pos" not in cfg.features
+        assert cfg.features_map == {
+            "action": "action",
+            "pixels/corner3": "observation.images.corner3",
+        }
 
     @pytest.mark.parametrize("episode_length", [0, -1])
     def test_build_env_config_rejects_invalid_episode_length(
@@ -272,9 +290,24 @@ class TestDummyMetaworldEnv:
         observation_space = cast(spaces.Dict, env.observation_space)
         assert "pixels" in observation_space.spaces
         assert "agent_pos" in observation_space.spaces
-        assert observation_space["pixels"].shape == (64, 64, 3)
+        pixels_space = cast(spaces.Dict, observation_space["pixels"])
+        assert pixels_space["corner2"].shape == (64, 64, 3)
         assert observation_space["agent_pos"].shape == (4,)
         assert env.action_space.shape == (4,)
+
+    def test_dummy_env_uses_configured_camera_name(self) -> None:
+        from praxis_eval.envs.metaworld.runtime import _DummyMetaworldEnv
+
+        env = _DummyMetaworldEnv(
+            obs_type="pixels",
+            camera_name="corner3",
+            observation_height=32,
+            observation_width=40,
+        )
+        observation_space = cast(spaces.Dict, env.observation_space)
+        pixels_space = cast(spaces.Dict, observation_space["pixels"])
+        assert list(pixels_space.spaces) == ["corner3"]
+        assert pixels_space["corner3"].shape == (32, 40, 3)
 
     def test_dummy_env_raises_on_reset(self) -> None:
         from praxis_eval.envs.metaworld.runtime import _DummyMetaworldEnv
@@ -375,8 +408,8 @@ class TestMetaworldEnv:
         backend = cast(Any, env._env)
         assert backend.seed_calls == [123]
         assert backend.seeded_rand_vec is True
-        assert obs["pixels"].shape == (6, 8, 3)
-        assert obs["pixels"][0, 0, 0] == 99
+        assert obs["pixels"]["corner2"].shape == (6, 8, 3)
+        assert obs["pixels"]["corner2"][0, 0, 0] == 99
         np.testing.assert_array_equal(obs["agent_pos"], np.array([1.0, 2.0, 3.0, 4.0]))
 
         step_obs, reward, terminated, truncated, step_info = env.step(
@@ -392,6 +425,59 @@ class TestMetaworldEnv:
             step_obs["agent_pos"],
             np.array([5.0, 6.0, 7.0, 8.0]),
         )
+
+    def test_vector_env_preprocesses_named_pixels_to_contract_key(self) -> None:
+        import gymnasium as gym
+        from gymnasium.vector import SyncVectorEnv
+        from lerobot.envs.utils import preprocess_observation
+
+        from praxis_eval.envs.metaworld.env import (
+            make_action_space,
+            make_observation_space,
+        )
+
+        class _MiniMetaworldEnv(gym.Env):
+            metadata = {"render_modes": ["rgb_array"], "render_fps": 80}
+
+            def __init__(self) -> None:
+                super().__init__()
+                self.observation_space = make_observation_space(
+                    obs_type="pixels_agent_pos",
+                    camera_name="corner2",
+                    observation_height=6,
+                    observation_width=8,
+                )
+                self.action_space = make_action_space()
+
+            def reset(self, *, seed: int | None = None, options=None):
+                _ = options
+                super().reset(seed=seed)
+                return (
+                    {
+                        "pixels": {
+                            "corner2": np.zeros((6, 8, 3), dtype=np.uint8),
+                        },
+                        "agent_pos": np.ones((4,), dtype=np.float64),
+                    },
+                    {},
+                )
+
+            def step(self, action):
+                _ = action
+                observation, _info = self.reset()
+                return observation, 0.0, False, False, {}
+
+        env = SyncVectorEnv([_MiniMetaworldEnv, _MiniMetaworldEnv])
+        try:
+            obs, _info = env.reset()
+            processed = preprocess_observation(obs)
+        finally:
+            env.close()
+
+        assert obs["pixels"]["corner2"].shape == (2, 6, 8, 3)
+        assert "observation.image" not in processed
+        assert processed["observation.images.corner2"].shape == (2, 3, 6, 8)
+        assert processed["observation.state"].shape == (2, 4)
 
     def test_local_env_does_not_reset_inside_terminal_step(
         self,

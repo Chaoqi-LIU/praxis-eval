@@ -49,6 +49,7 @@ def _make_async_vector_env_cls(cfg_obj: Any) -> Any:
 
     dummy_env_fn = make_dummy_metaworld_env_fn(
         obs_type=str(getattr(cfg_obj, "obs_type", "pixels_agent_pos")),
+        camera_name=str(getattr(cfg_obj, "camera_name", "corner2")),
         observation_height=int(getattr(cfg_obj, "observation_height", 480)),
         observation_width=int(getattr(cfg_obj, "observation_width", 480)),
     )
