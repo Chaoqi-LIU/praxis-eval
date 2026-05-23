@@ -1,0 +1,17 @@
+{
+  "name": "praxis-eval-docs",
+  "version": "0.1.0",
+  "description": "Documentation for praxis-eval",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev --host 127.0.0.1",
+    "docs:build": "vitepress build",
+    "docs:check": "python scripts/check_snippets.py",
+    "docs:preview": "vitepress preview --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.12",
+    "vue": "^3.4.0"
+  }
+}
