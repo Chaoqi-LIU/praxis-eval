@@ -91,7 +91,7 @@ praxis-eval-verify --help
 
 ## Documentation
 
-Full documentation is in [docs/](docs/index.md), including installation details, benchmark contracts, remote policy evaluation, runtime setup, examples, and the developer guide for adding new benchmarks.
+Full documentation is available at <https://chaoqi-liu.com/praxis-eval/>, including installation details, benchmark contracts, remote policy evaluation, runtime setup, examples, and the developer guide for adding new benchmarks.
 
 ## License And Citation
 

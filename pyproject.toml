@@ -47,7 +47,7 @@ dependencies = [
 Homepage = "https://chaoqi-liu.com"
 Source = "https://github.com/Chaoqi-LIU/praxis-eval"
 Issues = "https://github.com/Chaoqi-LIU/praxis-eval/issues"
-Documentation = "https://github.com/Chaoqi-LIU/praxis-eval#readme"
+Documentation = "https://chaoqi-liu.com/praxis-eval/"
 
 [project.scripts]
 praxis-eval-setup = "praxis_eval.scripts.setup:main"

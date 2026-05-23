@@ -11,6 +11,7 @@ EXPECTED_VERSION = "0.1.1"
 EXPECTED_EMAIL = "liuchaoqi730@gmail.com"
 EXPECTED_HOMEPAGE = "https://chaoqi-liu.com"
 EXPECTED_SOURCE = "https://github.com/Chaoqi-LIU/praxis-eval"
+EXPECTED_DOCUMENTATION = "https://chaoqi-liu.com/praxis-eval/"
 
 
 def test_version_matches_distribution_metadata() -> None:
@@ -34,7 +35,7 @@ def test_distribution_metadata_has_standard_project_urls() -> None:
     assert f"Homepage, {EXPECTED_HOMEPAGE}" in project_urls
     assert f"Source, {EXPECTED_SOURCE}" in project_urls
     assert f"Issues, {EXPECTED_SOURCE}/issues" in project_urls
-    assert f"Documentation, {EXPECTED_SOURCE}#readme" in project_urls
+    assert f"Documentation, {EXPECTED_DOCUMENTATION}" in project_urls
 
 
 def test_remote_extra_accepts_current_minor_line() -> None:
