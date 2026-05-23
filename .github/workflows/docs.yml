@@ -7,6 +7,11 @@ on:
       - doc
       - main
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy this run to GitHub Pages"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -55,18 +60,18 @@ jobs:
         working-directory: docs
 
       - name: Configure Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/doc'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.deploy)
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/doc'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.deploy)
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/.vitepress/dist
 
   deploy-pages:
     name: Deploy Pages
-    if: github.event_name == 'push' && github.ref == 'refs/heads/doc'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.deploy)
     needs: build-docs
     runs-on: ubuntu-latest
     permissions:
