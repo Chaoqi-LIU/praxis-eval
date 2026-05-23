@@ -19,6 +19,10 @@ jobs:
   build-docs:
     name: Build Docs
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,6 +53,10 @@ jobs:
       - name: Build docs
         run: npm run docs:build
         working-directory: docs
+
+      - name: Configure Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/doc'
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/doc'
