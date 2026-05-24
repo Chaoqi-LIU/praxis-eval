@@ -71,6 +71,10 @@ export default defineConfig({
       {
         text: "Examples",
         items: [
+          {
+            text: "Runnable Repository Examples",
+            link: "/examples/repository-examples",
+          },
           { text: "Local Random Policy", link: "/examples/local-random-policy" },
           { text: "Local Custom Policy", link: "/examples/local-custom-policy" },
           { text: "Remote Policy", link: "/examples/remote-policy" },

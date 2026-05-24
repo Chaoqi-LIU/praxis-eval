@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from praxis_eval import EvalConfig, LocalPolicy, get_driver, evaluate
+from praxis_eval import EvalConfig, evaluate, get_driver
 
 
 class RandomPolicy:
@@ -37,7 +37,7 @@ print(driver.contract.action)
 
 result = evaluate(
     "metaworld",
-    policy=LocalPolicy(RandomPolicy(seed=42)),
+    policy=RandomPolicy(seed=42),
     config=EvalConfig(
         task="reach-v3",
         num_eval_per_task=1,

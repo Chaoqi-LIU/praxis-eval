@@ -29,7 +29,7 @@ This example assumes the LIBERO extra and simulator runtime are installed.
 ```python
 import numpy as np
 
-from praxis_eval import EvalConfig, LocalPolicy, get_driver, evaluate
+from praxis_eval import EvalConfig, evaluate, get_driver
 
 
 class RandomPolicy:
@@ -57,7 +57,7 @@ print(driver.contract)
 
 result = evaluate(
     "libero",
-    policy=LocalPolicy(RandomPolicy(seed=42)),
+    policy=RandomPolicy(seed=42),
     config=EvalConfig(
         task="libero_10",
         task_ids=(0,),
@@ -92,6 +92,12 @@ praxis-eval-verify --help
 ## Documentation
 
 Full documentation is available at <https://chaoqi-liu.com/praxis-eval/>, including installation details, benchmark contracts, remote policy evaluation, runtime setup, examples, and the developer guide for adding new benchmarks.
+
+## Examples
+
+Runnable examples live in [examples/](examples/). They cover local policy
+evaluation, remote policy evaluation, custom policy adapters, and custom
+benchmark drivers.
 
 ## License And Citation
 

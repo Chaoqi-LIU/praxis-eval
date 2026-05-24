@@ -5,7 +5,7 @@ The top-level API dispatches a policy and config to a registered benchmark drive
 ```python
 import numpy as np
 
-from praxis_eval import EvalConfig, LocalPolicy, evaluate
+from praxis_eval import EvalConfig, evaluate
 
 
 class ZeroPolicy:
@@ -20,7 +20,7 @@ class ZeroPolicy:
 
 result = evaluate(
     "libero",
-    policy=LocalPolicy(ZeroPolicy()),
+    policy=ZeroPolicy(),
     config=EvalConfig(
         task="libero_10",
         num_eval_per_task=5,
@@ -43,7 +43,10 @@ def evaluate(
 
 `env` may be a registered driver name such as `"libero"` or an explicit object implementing the `EvalDriver` protocol. String names are resolved with `get_driver(...)`.
 
-`policy` must implement the `Policy` protocol. In most user code this is `LocalPolicy(...)` or `RemotePolicy(...)`.
+`policy` must implement the `Policy` protocol. Pass a full policy object
+directly when it needs evaluator metadata such as `action_spec`. Use
+`LocalPolicy(...)` for simple callables or objects that ignore `action_spec`,
+and `RemotePolicy(...)` for a separate policy process.
 
 `config` is an `EvalConfig` instance. It contains generic rollout settings and benchmark-specific `env_kwargs`.
 

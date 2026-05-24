@@ -22,7 +22,7 @@ Run evaluation with a local policy:
 ```python
 import numpy as np
 
-from praxis_eval import EvalConfig, LocalPolicy, evaluate
+from praxis_eval import EvalConfig, evaluate
 
 
 class ZeroPolicy:
@@ -41,7 +41,7 @@ class ZeroPolicy:
 
 result = evaluate(
     "libero",
-    policy=LocalPolicy(ZeroPolicy()),
+    policy=ZeroPolicy(),
     config=EvalConfig(
         task="libero_10",
         task_ids=(0,),
