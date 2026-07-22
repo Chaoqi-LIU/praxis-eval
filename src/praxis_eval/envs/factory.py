@@ -24,7 +24,15 @@ _ENV_CONFIG_REGISTRY: dict[str, str] = {
 
 # Env types that are not registered in lerobot and must be instantiated directly.
 _DIRECT_ENV_TYPES: frozenset[str] = frozenset(
-    {"libero", "metaworld", "mshab", "robocasa", "robomimic", "simpler"}
+    {
+        "libero",
+        "metaworld",
+        "mshab",
+        "robocasa",
+        "robocasa_gr1",
+        "robomimic",
+        "simpler",
+    }
 )
 AsyncEnvBuilder = Callable[[Any, int], Any]
 EnvBuilder = Callable[[Any, int, bool], Any]
@@ -264,6 +272,7 @@ _DEFAULT_ENV_FAMILY_REGISTRARS: tuple[str, ...] = (
     "praxis_eval.envs.metaworld.registration:register_metaworld_env_family",
     "praxis_eval.envs.simpler.registration:register_simpler_env_family",
     "praxis_eval.envs.mshab.registration:register_mshab_env_family",
+    "praxis_eval.envs.robocasa_gr1.registration:register_robocasa_gr1_env_family",
 )
 
 

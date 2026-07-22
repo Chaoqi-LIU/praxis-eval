@@ -13,7 +13,7 @@ from urllib.parse import unquote, urlparse
 
 PRAXIS_REMOTE_FALLBACK_INSTALL = "praxis-remote>=0.1.0,<0.2.0"
 
-PRAXIS_EVAL_FALLBACK_INSTALL = "praxis-eval==0.1.2"
+PRAXIS_EVAL_FALLBACK_INSTALL = "praxis-eval==0.1.3"
 
 
 def project_root() -> Path | None:
