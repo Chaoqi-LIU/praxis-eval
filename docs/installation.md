@@ -17,6 +17,7 @@ Install extras for the benchmark families you plan to run:
 ```bash
 pip install "praxis-eval[libero]"
 pip install "praxis-eval[robocasa]"
+pip install "praxis-eval[robocasa_gr1]"
 pip install "praxis-eval[robomimic]"
 pip install "praxis-eval[metaworld]"
 pip install "praxis-eval[simpler]"
@@ -29,6 +30,7 @@ pip install "praxis-eval[remote]"
 | `remote` | `praxis-remote>=0.1.0,<0.2.0` | Optional policy transport. |
 | `libero` | `praxis-libero`, `praxis-robosuite`, LeRobot support | Runs in the current environment. |
 | `robocasa` | `praxis-robocasa`, `praxis-robosuite`, MuJoCo | Requires RoboCasa asset setup. |
+| `robocasa_gr1` | `praxis-robocasa-gr1`, the GR-1-enabled `praxis-robosuite`, MuJoCo | Runs in-process and requires GR-1 tabletop asset setup. |
 | `robomimic` | RoboMimic and `praxis-robosuite` | Runs robosuite tasks in the current environment. |
 | `metaworld` | LeRobot MetaWorld dependencies | Runs MetaWorld tasks in the current environment. |
 | `simpler` | `praxis-simpler`, `praxis-remote` | Usually evaluates through a dedicated runtime. |
@@ -43,6 +45,7 @@ Setup commands prepare assets or dedicated simulator runtimes:
 ```bash
 praxis-eval-setup --help
 praxis-eval-setup robocasa
+praxis-eval-setup robocasa_gr1
 praxis-eval-setup simpler
 praxis-eval-setup mshab
 ```
@@ -51,6 +54,7 @@ Each setup command also supports `--help`:
 
 ```bash
 praxis-eval-setup robocasa --help
+praxis-eval-setup robocasa_gr1 --help
 praxis-eval-setup simpler --help
 praxis-eval-setup mshab --help
 ```
@@ -63,6 +67,7 @@ Verifier commands run short random-action rollouts. They should be run only on m
 praxis-eval-verify --help
 praxis-eval-verify libero
 praxis-eval-verify robocasa
+praxis-eval-verify robocasa_gr1
 praxis-eval-verify robomimic
 praxis-eval-verify metaworld
 praxis-eval-verify simpler

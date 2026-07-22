@@ -68,6 +68,7 @@ print(result.artifacts)
 
 - **LIBERO**: current-environment evaluation with LIBERO suites and normalized 7-D actions.
 - **RoboCasa**: RoboCasa365 tasks, asset setup, 16-D state, and 12-D mobile manipulation actions.
+- **RoboCasa GR-1**: 24 humanoid tabletop tasks, two ego-view streams, named arm/hand/waist state, and 29-D physical-unit actions.
 - **RoboMimic**: robosuite-backed RoboMimic tasks with task aliases, known horizons, and 7-D actions.
 - **MetaWorld**: MT50 selectors, difficulty groups, pixel/state observations, and 4-D actions.
 - **SimplerEnv**: Bridge tasks executed through a dedicated SimplerEnv runtime and remote policy transport.

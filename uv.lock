@@ -874,12 +874,6 @@ wheels = [
 ]
 
 [[package]]
-name = "egl-probe"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b3/c3/c5fea892e18631721a7d7e492a790bde8e3dc930861866bedb38762d0d7c/egl_probe-1.0.2.tar.gz", hash = "sha256:29bdca7b08da1e060cfb42cd46af8300a7ac4f3b1b2eeb16e545ea16d9a5ac93", size = 217495, upload-time = "2021-07-16T08:50:18.481Z" }
-
-[[package]]
 name = "einops"
 version = "0.8.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1379,12 +1373,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/32/9e/87e6705b4d6890e7cecdf876e2a7d3e40654a2ae37482d79a6f1b87f7b92/h5py-3.16.0-cp314-cp314t-win_amd64.whl", hash = "sha256:4c6ab014ab704b4feaa719ae783b86522ed0bf1f82184704ed3c9e4e3228796e", size = 3381671, upload-time = "2026-03-06T13:49:04.351Z" },
     { url = "https://files.pythonhosted.org/packages/96/91/9fad90cfc5f9b2489c7c26ad897157bce82f0e9534a986a221b99760b23b/h5py-3.16.0-cp314-cp314t-win_arm64.whl", hash = "sha256:faca8fb4e4319c09d83337adc80b2ca7d5c5a343c2d6f1b6388f32cfecca13c1", size = 2740706, upload-time = "2026-03-06T13:49:06.347Z" },
 ]
-
-[[package]]
-name = "hf-egl-probe"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e6/3e/ffad88145b342d5a972711d0b47e202f2e51c9a436d9b6bdd55f10ed893e/hf_egl_probe-1.0.2.tar.gz", hash = "sha256:0cbc6352236f5c14f681328e2e0d2cb4d101828c81aa58793dbc9a91feee5e93", size = 217668, upload-time = "2025-11-03T15:58:15.592Z" }
 
 [[package]]
 name = "hf-transfer"
@@ -3050,7 +3038,7 @@ wheels = [
 
 [[package]]
 name = "praxis-eval"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },
@@ -3069,10 +3057,11 @@ all = [
     { name = "praxis-mshab" },
     { name = "praxis-remote" },
     { name = "praxis-robocasa" },
+    { name = "praxis-robocasa-gr1" },
+    { name = "praxis-robomimic" },
     { name = "praxis-robosuite" },
     { name = "praxis-simpler" },
     { name = "pyyaml" },
-    { name = "robomimic" },
     { name = "torch" },
     { name = "tqdm" },
 ]
@@ -3129,12 +3118,25 @@ robocasa = [
     { name = "torch" },
     { name = "tqdm" },
 ]
+robocasa-gr1 = [
+    { name = "gymnasium" },
+    { name = "lerobot" },
+    { name = "mujoco" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "praxis-robocasa-gr1" },
+    { name = "praxis-robosuite" },
+    { name = "torch" },
+    { name = "tqdm" },
+]
 robomimic = [
     { name = "gymnasium" },
     { name = "lerobot" },
+    { name = "mujoco" },
+    { name = "numpy" },
     { name = "omegaconf" },
+    { name = "praxis-robomimic" },
     { name = "praxis-robosuite" },
-    { name = "robomimic" },
     { name = "torch" },
     { name = "tqdm" },
 ]
@@ -3153,11 +3155,13 @@ requires-dist = [
     { name = "gymnasium", marker = "extra == 'libero'", specifier = ">=1.0.0" },
     { name = "gymnasium", marker = "extra == 'metaworld'", specifier = ">=1.0.0" },
     { name = "gymnasium", marker = "extra == 'robocasa'", specifier = ">=1.0.0" },
+    { name = "gymnasium", marker = "extra == 'robocasa-gr1'", specifier = ">=1.0.0" },
     { name = "gymnasium", marker = "extra == 'robomimic'", specifier = ">=1.0.0" },
     { name = "lerobot", marker = "extra == 'dev'", specifier = "==0.4.4" },
     { name = "lerobot", marker = "extra == 'libero'", specifier = "==0.4.4" },
     { name = "lerobot", marker = "extra == 'mshab'", specifier = "==0.4.4" },
     { name = "lerobot", marker = "extra == 'robocasa'", specifier = "==0.4.4" },
+    { name = "lerobot", marker = "extra == 'robocasa-gr1'", specifier = "==0.4.4" },
     { name = "lerobot", marker = "extra == 'robomimic'", specifier = "==0.4.4" },
     { name = "lerobot", marker = "extra == 'simpler'", specifier = "==0.4.4" },
     { name = "lerobot", extras = ["metaworld"], marker = "extra == 'all'", specifier = "==0.4.4" },
@@ -3166,9 +3170,13 @@ requires-dist = [
     { name = "lxml", marker = "extra == 'robocasa'", specifier = ">=5.0.0" },
     { name = "mujoco", marker = "extra == 'all'", specifier = "==3.3.1" },
     { name = "mujoco", marker = "extra == 'robocasa'", specifier = "==3.3.1" },
+    { name = "mujoco", marker = "extra == 'robocasa-gr1'", specifier = "==3.3.1" },
+    { name = "mujoco", marker = "extra == 'robomimic'", specifier = "==3.3.1" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "numpy", marker = "extra == 'all'", specifier = "==2.2.5" },
     { name = "numpy", marker = "extra == 'robocasa'", specifier = "==2.2.5" },
+    { name = "numpy", marker = "extra == 'robocasa-gr1'", specifier = "==2.2.5" },
+    { name = "numpy", marker = "extra == 'robomimic'", specifier = "==2.2.5" },
     { name = "omegaconf", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'all'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'dev'", specifier = ">=2.3.0" },
@@ -3176,10 +3184,11 @@ requires-dist = [
     { name = "omegaconf", marker = "extra == 'metaworld'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'mshab'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'robocasa'", specifier = ">=2.3.0" },
+    { name = "omegaconf", marker = "extra == 'robocasa-gr1'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'robomimic'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'simpler'", specifier = ">=2.3.0" },
-    { name = "praxis-libero", marker = "extra == 'all'", specifier = "==0.1.1" },
-    { name = "praxis-libero", marker = "extra == 'libero'", specifier = "==0.1.1" },
+    { name = "praxis-libero", marker = "extra == 'all'", specifier = "==0.1.1.post1" },
+    { name = "praxis-libero", marker = "extra == 'libero'", specifier = "==0.1.1.post1" },
     { name = "praxis-mshab", marker = "extra == 'all'", specifier = "==0.0.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'dev'", specifier = "==0.0.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'mshab'", specifier = "==0.0.1.post2" },
@@ -3190,10 +3199,15 @@ requires-dist = [
     { name = "praxis-remote", marker = "extra == 'simpler'", specifier = ">=0.1.0,<0.2.0" },
     { name = "praxis-robocasa", marker = "extra == 'all'", specifier = "==1.0.0" },
     { name = "praxis-robocasa", marker = "extra == 'robocasa'", specifier = "==1.0.0" },
-    { name = "praxis-robosuite", marker = "extra == 'all'", specifier = "==1.5.2" },
-    { name = "praxis-robosuite", marker = "extra == 'libero'", specifier = "==1.5.2" },
-    { name = "praxis-robosuite", marker = "extra == 'robocasa'", specifier = "==1.5.2" },
-    { name = "praxis-robosuite", marker = "extra == 'robomimic'", specifier = "==1.5.2" },
+    { name = "praxis-robocasa-gr1", marker = "extra == 'all'", specifier = "==0.2.0" },
+    { name = "praxis-robocasa-gr1", marker = "extra == 'robocasa-gr1'", specifier = "==0.2.0" },
+    { name = "praxis-robomimic", marker = "extra == 'all'", specifier = "==0.5.0" },
+    { name = "praxis-robomimic", marker = "extra == 'robomimic'", specifier = "==0.5.0" },
+    { name = "praxis-robosuite", marker = "extra == 'all'", specifier = "==1.5.2.post1" },
+    { name = "praxis-robosuite", marker = "extra == 'libero'", specifier = "==1.5.2.post1" },
+    { name = "praxis-robosuite", marker = "extra == 'robocasa'", specifier = "==1.5.2.post1" },
+    { name = "praxis-robosuite", marker = "extra == 'robocasa-gr1'", specifier = "==1.5.2.post1" },
+    { name = "praxis-robosuite", marker = "extra == 'robomimic'", specifier = "==1.5.2.post1" },
     { name = "praxis-simpler", marker = "extra == 'all'", specifier = "==0.0.1.post2" },
     { name = "praxis-simpler", marker = "extra == 'dev'", specifier = "==0.0.1.post2" },
     { name = "praxis-simpler", marker = "extra == 'simpler'", specifier = "==0.0.1.post2" },
@@ -3202,14 +3216,13 @@ requires-dist = [
     { name = "pyyaml", marker = "extra == 'all'", specifier = ">=6.0.0" },
     { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "pyyaml", marker = "extra == 'libero'", specifier = ">=6.0.0" },
-    { name = "robomimic", marker = "extra == 'all'", specifier = "==0.2.0" },
-    { name = "robomimic", marker = "extra == 'robomimic'", specifier = "==0.2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "torch", marker = "extra == 'all'", specifier = ">=2.7.0" },
     { name = "torch", marker = "extra == 'dev'", specifier = ">=2.7.0" },
     { name = "torch", marker = "extra == 'libero'", specifier = ">=2.7.0" },
     { name = "torch", marker = "extra == 'metaworld'", specifier = ">=2.7.0" },
     { name = "torch", marker = "extra == 'robocasa'", specifier = ">=2.7.0" },
+    { name = "torch", marker = "extra == 'robocasa-gr1'", specifier = ">=2.7.0" },
     { name = "torch", marker = "extra == 'robomimic'", specifier = ">=2.7.0" },
     { name = "tqdm", marker = "extra == 'all'", specifier = ">=4.66.0" },
     { name = "tqdm", marker = "extra == 'dev'", specifier = ">=4.66.0" },
@@ -3217,14 +3230,15 @@ requires-dist = [
     { name = "tqdm", marker = "extra == 'metaworld'", specifier = ">=4.66.0" },
     { name = "tqdm", marker = "extra == 'mshab'", specifier = ">=4.66.0" },
     { name = "tqdm", marker = "extra == 'robocasa'", specifier = ">=4.66.0" },
+    { name = "tqdm", marker = "extra == 'robocasa-gr1'", specifier = ">=4.66.0" },
     { name = "tqdm", marker = "extra == 'robomimic'", specifier = ">=4.66.0" },
     { name = "tqdm", marker = "extra == 'simpler'", specifier = ">=4.66.0" },
 ]
-provides-extras = ["dev", "remote", "libero", "metaworld", "robocasa", "robomimic", "simpler", "mshab", "all"]
+provides-extras = ["dev", "remote", "libero", "metaworld", "robocasa", "robocasa-gr1", "robomimic", "simpler", "mshab", "all"]
 
 [[package]]
 name = "praxis-libero"
-version = "0.1.1"
+version = "0.1.1.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bddl" },
@@ -3233,22 +3247,21 @@ dependencies = [
     { name = "einops" },
     { name = "future" },
     { name = "gymnasium" },
-    { name = "hf-egl-probe" },
     { name = "huggingface-hub" },
     { name = "hydra-core" },
     { name = "matplotlib" },
     { name = "mujoco" },
     { name = "numpy" },
     { name = "opencv-python" },
+    { name = "praxis-robomimic" },
     { name = "praxis-robosuite" },
-    { name = "robomimic" },
     { name = "thop" },
     { name = "transformers" },
     { name = "wandb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3f/7f/6e942c62aafb5d5e3b8062a1eb3cce7970472e78eefa39840fbba4acbe2e/praxis_libero-0.1.1.tar.gz", hash = "sha256:73fe904ad6d8c3111e0aef52c5634c9e8e28011a957bbd3ca1f91b1763fb1424", size = 2980616, upload-time = "2026-05-22T09:29:06.556Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/96/432a0b6567764e0c5a0e752f4ed1a32d3e744c94349958627fafe5a5a40a/praxis_libero-0.1.1.post1.tar.gz", hash = "sha256:0eec9533bdc676ab2e6a08f04eeaa7ec5fc3e93bbd09d3bec71adc1e96e96445", size = 2981805, upload-time = "2026-07-22T11:35:27.652Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/43/ba377f6faf7fada2c5f6d91abbd39ef0151a9caee3bc2d4d4a7a858440af/praxis_libero-0.1.1-py3-none-any.whl", hash = "sha256:d6a38bd5891cc5491f3d3ba5b1ebe2d541c750bc23f842bedde0264a7b94272f", size = 3193071, upload-time = "2026-05-22T09:29:04.814Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/93/e8066f41d9bb417834411026e02685b06e64cbf84e775579d7013c911e57/praxis_libero-0.1.1.post1-py3-none-any.whl", hash = "sha256:c42f9993949eca2eaadea9c103452b40dbb9c162e37c094ea92262a012f6d730", size = 3193140, upload-time = "2026-07-22T11:35:26.072Z" },
 ]
 
 [[package]]
@@ -3309,8 +3322,62 @@ wheels = [
 ]
 
 [[package]]
+name = "praxis-robocasa-gr1"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "gymnasium" },
+    { name = "h5py" },
+    { name = "hidapi" },
+    { name = "imageio" },
+    { name = "lxml" },
+    { name = "mujoco" },
+    { name = "numba" },
+    { name = "numpy" },
+    { name = "opencv-python" },
+    { name = "pillow" },
+    { name = "praxis-robosuite" },
+    { name = "pygame" },
+    { name = "pynput" },
+    { name = "pyyaml" },
+    { name = "scipy" },
+    { name = "termcolor" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/12/e7/4110714c52d39f034ea526b2cf8abbb7f52ea2994e596c49cb1306a7fd64/praxis_robocasa_gr1-0.2.0.tar.gz", hash = "sha256:3a32ba60a20ce45d27cc85a638dff4b95f9da935c0f06ea7c424049ca979f784", size = 216696, upload-time = "2026-07-22T08:39:13.285Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cc/b0/653f1c2fec973d0245b4a6545c9fab79e61abb6317a63e9f61331e9a7629/praxis_robocasa_gr1-0.2.0-py3-none-any.whl", hash = "sha256:0b134ac4574becedc16adae21d93916932f78c2bde5036380cef1306541a6da5", size = 363083, upload-time = "2026-07-22T08:39:11.949Z" },
+]
+
+[[package]]
+name = "praxis-robomimic"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "diffusers" },
+    { name = "h5py" },
+    { name = "huggingface-hub" },
+    { name = "imageio" },
+    { name = "imageio-ffmpeg" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "psutil" },
+    { name = "tensorboard" },
+    { name = "tensorboardx" },
+    { name = "termcolor" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3c/c9/ba9ebf9283e5290a05d0730143faf4bab8c3ed02f25867041bda1f1cc4a6/praxis_robomimic-0.5.0.tar.gz", hash = "sha256:21139fb6a09de2e08bf3260f3f5fe085b11d685cf8d5fc7f3ca747a39d075aee", size = 254054, upload-time = "2026-07-22T11:34:15.404Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/f6/bb8970a5720b7abe6d89ea4f988553b79550d2122ee3396104f50d0b1b02/praxis_robomimic-0.5.0-py3-none-any.whl", hash = "sha256:b5b5369b9a737fcd455702c2e08d8530cfb56c0eae30930a03e273ff45199b71", size = 297322, upload-time = "2026-07-22T11:34:13.899Z" },
+]
+
+[[package]]
 name = "praxis-robosuite"
-version = "1.5.2"
+version = "1.5.2.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mujoco" },
@@ -3325,9 +3392,9 @@ dependencies = [
     { name = "termcolor" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1e/d9/e7f0525a5ecec5d9a19401c9670a9c12be4f5b0d2c7c295bd41775dc1d10/praxis_robosuite-1.5.2.tar.gz", hash = "sha256:a15e57af9a1a2e09c66f52df822e24a9d250a78517e0fd6b5a53c8cdc536946a", size = 32895806, upload-time = "2026-05-22T09:29:00.462Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/a3/94951916083845d0e7b13904f71263dddcd41fee5d2ad12dba1836028d9e/praxis_robosuite-1.5.2.post1.tar.gz", hash = "sha256:662d318e6ceafe7482ae6c72b85f10638aa639bc81519d368cd1a9bfb4da89c5", size = 51089878, upload-time = "2026-07-22T08:34:31.615Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/f2/159ea0bf013bfa14838a73e978d3a371f7a53b5ae592ca6b13c08ee6a6b2/praxis_robosuite-1.5.2-py3-none-any.whl", hash = "sha256:a519236de5d628d92cbe20b462028b579a9da658cf98fe585c3251839a039698", size = 33228980, upload-time = "2026-05-22T09:28:57.641Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/49/0f5b71d532f4d8a0e0f9f04504c3c75debebb4b0c4868c55bee0bb8ac95a/praxis_robosuite-1.5.2.post1-py3-none-any.whl", hash = "sha256:27d15fd0eb36e21fa360360e78edf6edd9c53b55d25589f2ae2a00706f6208bf", size = 51423396, upload-time = "2026-07-22T08:34:27.753Z" },
 ]
 
 [[package]]
@@ -4265,26 +4332,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/86/0b9c8f56398b4fc85f8e99279907c258413a297e5603f8f2537fe5806e51/rerun_sdk-0.26.2-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:a6f97b60aaa7d4e8c6124a3f6b97ce9dbd09520050955f0e0bdacb72b0eb106a", size = 98768129, upload-time = "2025-10-27T11:34:27.36Z" },
     { url = "https://files.pythonhosted.org/packages/be/e7/99fc91c0f99f69d7d43e1db0a6f6cb8273ffc02111539bfc1fee43749bad/rerun_sdk-0.26.2-cp39-abi3-win_amd64.whl", hash = "sha256:a493ad6c8357022cba2ca6f8954a81d0faf984b0b22154eb1d976bfc7649df63", size = 84267089, upload-time = "2025-10-27T11:34:32.023Z" },
 ]
-
-[[package]]
-name = "robomimic"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "egl-probe" },
-    { name = "h5py" },
-    { name = "imageio" },
-    { name = "imageio-ffmpeg" },
-    { name = "numpy" },
-    { name = "psutil" },
-    { name = "tensorboard" },
-    { name = "tensorboardx" },
-    { name = "termcolor" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/c3/44b1d1ea4bcb4bbed43d19e09505f4142714451ded74020d4f679cdc89fb/robomimic-0.2.0.tar.gz", hash = "sha256:ee3bb5cf9c3e1feead6b57b43c5db738fd0a8e0c015fdf6419808af8fffdc463", size = 192919, upload-time = "2021-12-17T19:00:33.279Z" }
 
 [[package]]
 name = "rpds-py"

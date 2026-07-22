@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "praxis-eval"
-version = "0.1.2"
+version = "0.1.3"
 description = "Standalone robot-policy evaluation harness with local and remote policy adapters."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -76,8 +76,8 @@ libero = [
     "lerobot==0.4.4",
     "omegaconf>=2.3.0",
     "pyyaml>=6.0.0",
-    "praxis-robosuite==1.5.2",
-    "praxis-libero==0.1.1",
+    "praxis-robosuite==1.5.2.post1",
+    "praxis-libero==0.1.1.post1",
     "torch>=2.7.0",
     "tqdm>=4.66.0",
 ]
@@ -94,9 +94,20 @@ robocasa = [
     "omegaconf>=2.3.0",
     "numpy==2.2.5",
     "mujoco==3.3.1",
-    "praxis-robosuite==1.5.2",
+    "praxis-robosuite==1.5.2.post1",
     "praxis-robocasa==1.0.0",
     "lxml>=5.0.0",
+    "torch>=2.7.0",
+    "tqdm>=4.66.0",
+]
+robocasa_gr1 = [
+    "gymnasium>=1.0.0",
+    "lerobot==0.4.4",
+    "omegaconf>=2.3.0",
+    "numpy==2.2.5",
+    "mujoco==3.3.1",
+    "praxis-robosuite==1.5.2.post1",
+    "praxis-robocasa-gr1==0.2.0",
     "torch>=2.7.0",
     "tqdm>=4.66.0",
 ]
@@ -104,8 +115,10 @@ robomimic = [
     "gymnasium>=1.0.0",
     "lerobot==0.4.4",
     "omegaconf>=2.3.0",
-    "robomimic==0.2.0",
-    "praxis-robosuite==1.5.2",
+    "numpy==2.2.5",
+    "mujoco==3.3.1",
+    "praxis-robomimic==0.5.0",
+    "praxis-robosuite==1.5.2.post1",
     "torch>=2.7.0",
     "tqdm>=4.66.0",
 ]
@@ -129,13 +142,14 @@ all = [
     "omegaconf>=2.3.0",
     "praxis-remote>=0.1.0,<0.2.0",
     "pyyaml>=6.0.0",
-    "praxis-robosuite==1.5.2",
-    "praxis-libero==0.1.1",
+    "praxis-robosuite==1.5.2.post1",
+    "praxis-libero==0.1.1.post1",
     "numpy==2.2.5",
     "mujoco==3.3.1",
     "praxis-robocasa==1.0.0",
+    "praxis-robocasa-gr1==0.2.0",
     "lxml>=5.0.0",
-    "robomimic==0.2.0",
+    "praxis-robomimic==0.5.0",
     "praxis-simpler==0.0.1.post2",
     "praxis-mshab==0.0.1.post2",
     "torch>=2.7.0",

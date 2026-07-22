@@ -9,6 +9,7 @@ def test_setup_and_verify_script_help_entry_points_import_without_env_extras() -
         "praxis_eval.scripts.setup",
         "praxis_eval.scripts.setup_mshab",
         "praxis_eval.scripts.setup_robocasa",
+        "praxis_eval.scripts.setup_robocasa_gr1",
         "praxis_eval.scripts.setup_simpler",
         "praxis_eval.scripts.verify",
         "praxis_eval.scripts.verify_libero",
@@ -16,6 +17,7 @@ def test_setup_and_verify_script_help_entry_points_import_without_env_extras() -
         "praxis_eval.scripts.verify_mshab",
         "praxis_eval.scripts.verify_metaworld",
         "praxis_eval.scripts.verify_robocasa",
+        "praxis_eval.scripts.verify_robocasa_gr1",
         "praxis_eval.scripts.verify_robomimic",
     ]
     for module in modules:
@@ -32,6 +34,7 @@ def test_dispatch_scripts_forward_help_to_selected_benchmark() -> None:
     commands = [
         ("praxis_eval.scripts.setup", "robocasa"),
         ("praxis_eval.scripts.verify", "libero"),
+        ("praxis_eval.scripts.setup", "robocasa_gr1"),
     ]
     for module, benchmark in commands:
         result = subprocess.run(

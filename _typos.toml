@@ -1,0 +1,3 @@
+# RoboCasa uses PnP as the official abbreviation for pick-and-place tasks.
+[default.extend-words]
+Pn = "Pn"

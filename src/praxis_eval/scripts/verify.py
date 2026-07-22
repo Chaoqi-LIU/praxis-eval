@@ -13,6 +13,7 @@ VERIFY_MODULES = {
     "metaworld": "praxis_eval.scripts.verify_metaworld",
     "mshab": "praxis_eval.scripts.verify_mshab",
     "robocasa": "praxis_eval.scripts.verify_robocasa",
+    "robocasa_gr1": "praxis_eval.scripts.verify_robocasa_gr1",
     "robomimic": "praxis_eval.scripts.verify_robomimic",
     "simpler": "praxis_eval.scripts.verify_simpler",
 }

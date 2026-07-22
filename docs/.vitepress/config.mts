@@ -45,6 +45,7 @@ export default defineConfig({
         items: [
           { text: "LIBERO", link: "/benchmarks/libero" },
           { text: "RoboCasa", link: "/benchmarks/robocasa" },
+          { text: "RoboCasa GR-1", link: "/benchmarks/robocasa-gr1" },
           { text: "RoboMimic", link: "/benchmarks/robomimic" },
           { text: "MetaWorld", link: "/benchmarks/metaworld" },
           { text: "SimplerEnv", link: "/benchmarks/simpler" },

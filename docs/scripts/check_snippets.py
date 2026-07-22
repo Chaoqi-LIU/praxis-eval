@@ -114,7 +114,15 @@ def check_public_api_smoke() -> None:
     )
 
     del ActionSpec, EnvContract, EvalConfig, LocalPolicy, RemotePolicy
-    expected = {"libero", "metaworld", "mshab", "robocasa", "robomimic", "simpler"}
+    expected = {
+        "libero",
+        "metaworld",
+        "mshab",
+        "robocasa",
+        "robocasa_gr1",
+        "robomimic",
+        "simpler",
+    }
     actual = set(available_drivers())
     missing = expected - actual
     if missing:
@@ -132,11 +140,13 @@ def check_cli_help() -> None:
     commands = [
         ["praxis_eval.scripts.setup", "--help"],
         ["praxis_eval.scripts.setup", "robocasa", "--help"],
+        ["praxis_eval.scripts.setup", "robocasa_gr1", "--help"],
         ["praxis_eval.scripts.setup", "simpler", "--help"],
         ["praxis_eval.scripts.setup", "mshab", "--help"],
         ["praxis_eval.scripts.verify", "--help"],
         ["praxis_eval.scripts.verify", "libero", "--help"],
         ["praxis_eval.scripts.verify", "robocasa", "--help"],
+        ["praxis_eval.scripts.verify", "robocasa_gr1", "--help"],
         ["praxis_eval.scripts.verify", "robomimic", "--help"],
         ["praxis_eval.scripts.verify", "metaworld", "--help"],
         ["praxis_eval.scripts.verify", "simpler", "--help"],

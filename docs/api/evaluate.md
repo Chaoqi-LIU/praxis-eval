@@ -66,6 +66,7 @@ Built-in contract drivers are registered lazily on first lookup. Current built-i
 - `metaworld`
 - `mshab`
 - `robocasa`
+- `robocasa_gr1`
 - `robomimic`
 - `simpler`
 

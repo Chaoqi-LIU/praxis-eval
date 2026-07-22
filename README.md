@@ -15,6 +15,7 @@ Install the benchmark extras you plan to run:
 ```bash
 pip install "praxis-eval[libero]"
 pip install "praxis-eval[robocasa]"
+pip install "praxis-eval[robocasa_gr1]"
 pip install "praxis-eval[robomimic]"
 pip install "praxis-eval[metaworld]"
 pip install "praxis-eval[simpler]"
@@ -77,6 +78,7 @@ print(result.artifacts)
 | --- | --- | --- |
 | `libero` | `praxis-eval[libero]` | Runs in the current Python environment. |
 | `robocasa` | `praxis-eval[robocasa]` | Runs in the current Python environment after asset setup. |
+| `robocasa_gr1` | `praxis-eval[robocasa_gr1]` | Runs the GR-1 humanoid tabletop tasks in the current environment after asset setup. |
 | `robomimic` | `praxis-eval[robomimic]` | Runs in the current Python environment. |
 | `metaworld` | `praxis-eval[metaworld]` | Runs in the current Python environment. |
 | `simpler` | `praxis-eval[simpler]` | Uses a dedicated SimplerEnv runtime for simulator execution. |

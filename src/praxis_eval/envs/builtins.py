@@ -145,6 +145,7 @@ def register_builtin_contract_drivers() -> None:
     from praxis_eval.envs.metaworld import CONTRACT as METAWORLD_CONTRACT
     from praxis_eval.envs.mshab import CONTRACT as MSHAB_CONTRACT
     from praxis_eval.envs.robocasa import CONTRACT as ROBOCASA_CONTRACT
+    from praxis_eval.envs.robocasa_gr1 import CONTRACT as ROBOCASA_GR1_CONTRACT
     from praxis_eval.envs.robomimic import CONTRACT as ROBOMIMIC_CONTRACT
     from praxis_eval.envs.simpler import CONTRACT as SIMPLER_CONTRACT
     from praxis_eval.registry import register_driver
@@ -154,6 +155,7 @@ def register_builtin_contract_drivers() -> None:
         METAWORLD_CONTRACT,
         MSHAB_CONTRACT,
         ROBOCASA_CONTRACT,
+        ROBOCASA_GR1_CONTRACT,
         ROBOMIMIC_CONTRACT,
         SIMPLER_CONTRACT,
     ):
