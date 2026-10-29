@@ -6,6 +6,8 @@ from functools import partial
 
 import gymnasium as gym
 import numpy as np
+from gymnasium.vector.vector_env import AutoresetMode
+from gymnasium.wrappers import TimeLimit
 
 from praxis_eval.contracts import ActionSpec
 from praxis_eval.envs.async_vector_env import AsyncVectorEnv
@@ -100,6 +102,44 @@ def _make_vector_env(lanes, **kwargs):
     return env, prepared
 
 
+def _reference_env(lanes) -> gym.vector.SyncVectorEnv:
+    """Gymnasium's own SAME_STEP vector env over the same lane envs."""
+
+    def _make(task):
+        lane = _LaneEnv(EvalLaneJob(task[0], task[1], 0, 0))
+        return TimeLimit(lane, max_episode_steps=lane._max_episode_steps)
+
+    return gym.vector.SyncVectorEnv(
+        [partial(_make, task) for task in lanes],
+        autoreset_mode=AutoresetMode.SAME_STEP,
+    )
+
+
+def _step_like_reference(env, reference, actions):
+    """Step both envs and check that everything but the observations agrees."""
+    result = env.step(actions)
+    _, rewards, terminated, truncated, info = reference.step(actions)
+    np.testing.assert_array_equal(result[1], rewards)
+    np.testing.assert_array_equal(result[2], terminated)
+    np.testing.assert_array_equal(result[3], truncated)
+    _assert_same_info(result[4], info)
+    return result
+
+
+def _assert_same_info(actual: dict, expected: dict) -> None:
+    assert actual.keys() == expected.keys()
+    for key, value in expected.items():
+        if isinstance(value, dict):
+            _assert_same_info(actual[key], value)
+        elif key == "final_obs":
+            # Raw vs processed observations differ, but not which lanes have one.
+            assert actual[key].dtype == object
+            assert [x is None for x in actual[key]] == [x is None for x in value]
+        else:
+            assert actual[key].dtype == value.dtype, key
+            np.testing.assert_array_equal(actual[key], value)
+
+
 def _actions(*first: float) -> np.ndarray:
     return np.asarray([[value, 0.0] for value in first], dtype=np.float32)
 
@@ -119,49 +159,80 @@ class _RecordingPolicy:
 
 
 def test_done_lanes_restart_within_the_same_step() -> None:
-    env, _ = _make_vector_env([("a", 0), ("a", 0), ("b", 1)], seed=10)
+    lanes = [("a", 0), ("a", 0), ("b", 1)]
+    env, _ = _make_vector_env(lanes, seed=10)
+    reference = _reference_env(lanes)
     try:
         obs, _ = env.reset()
+        reference.reset()
         np.testing.assert_allclose(
             obs["observation.state"], [[10, 0, 0, 0], [12, 2, 0, 0], [11, 1, 0, 0]]
         )
 
-        obs, _, terminated, truncated, info = env.step(_actions(0.1, 0.2, 0.3))
-        assert not (terminated | truncated).any()
-        assert "final_observation" not in info
+        *_, info = _step_like_reference(env, reference, _actions(0.1, 0.2, 0.3))
+        assert "final_obs" not in info
 
         # Task "a" succeeds at step 2: both "a" lanes terminate and restart.
-        obs, rewards, terminated, truncated, info = env.step(_actions(0.1, 0.2, 0.3))
-        assert terminated.tolist() == [True, True, False]
-        assert not truncated.any()
-        assert info["is_success"].tolist() == [True, True, False]
-        assert rewards.tolist() == [1.0, 1.0, 0.0]
-        assert info["_final_observation"].tolist() == [True, True, False]
-        np.testing.assert_allclose(
-            info["final_observation"]["observation.state"][:2],
-            [[10, 0, 2, 0.1], [12, 2, 2, 0.2]],
+        obs, _, terminated, _, info = _step_like_reference(
+            env, reference, _actions(0.1, 0.2, 0.3)
         )
-        assert info["final_observation"]["task"] == ["a 0", "a 0", "b 1"]
+        assert terminated.tolist() == [True, True, False]
+        assert info["_final_info"].tolist() == [True, True, False]
+        assert info["final_info"]["is_success"].tolist() == [True, True, False]
+        assert info["_final_obs"].tolist() == [True, True, False]
+        final_obs = info["final_obs"]
+        np.testing.assert_allclose(final_obs[0]["observation.state"], [10, 0, 2, 0.1])
+        np.testing.assert_allclose(final_obs[1]["observation.state"], [12, 2, 2, 0.2])
+        assert (final_obs[0]["task"], final_obs[1]["task"]) == ("a 0", "a 0")
+        assert final_obs[2] is None
         np.testing.assert_allclose(
             obs["observation.state"],
             [[14, 4, 0, 0], [16, 6, 0, 0], [11, 1, 2, 0.3]],
             atol=1e-6,
         )
 
-        # Lane 2 hits its 3-step horizon. The restarted lanes took exactly one
+        # Lane 2 reaches its 3-step horizon. The restarted lanes took exactly one
         # step with this action, so no pending autoreset swallowed it.
-        obs, _, terminated, truncated, info = env.step(_actions(0.4, 0.5, 0.6))
-        assert terminated.tolist() == [False, False, False]
+        obs, _, _, truncated, info = _step_like_reference(
+            env, reference, _actions(0.4, 0.5, 0.6)
+        )
         assert truncated.tolist() == [False, False, True]
-        assert info["is_success"].tolist() == [False, False, False]
+        assert info["_final_info"].tolist() == [False, False, True]
+        assert info["final_info"]["_is_success"].tolist() == [False, False, True]
+        assert not info["final_info"]["is_success"][2]
         np.testing.assert_allclose(
-            info["final_observation"]["observation.state"][2], [11, 1, 3, 0.6]
+            info["final_obs"][2]["observation.state"], [11, 1, 3, 0.6]
         )
         np.testing.assert_allclose(
             obs["observation.state"],
             [[14, 4, 1, 0.4], [16, 6, 1, 0.5], [13, 3, 0, 0]],
             atol=1e-6,
         )
+    finally:
+        env.close()
+        reference.close()
+
+
+def test_observation_space_describes_observations() -> None:
+    env, _ = _make_vector_env([("a", 0), ("b", 1)], episode_length=1)
+    try:
+        obs, _ = env.reset()
+        arrays = {key: obs[key] for key in env.observation_space.spaces}
+        assert env.observation_space.contains(arrays)
+        for key, space in env.observation_space.spaces.items():
+            assert arrays[key].dtype == space.dtype
+        # The keys outside the space are the documented non-array values.
+        assert {key: obs[key] for key in obs.keys() - arrays.keys()} == {
+            "task": ["a 0", "b 1"],
+            "next.reward": 0.0,
+            "next.done": False,
+            "next.truncated": False,
+        }
+
+        *_, info = env.step(_actions(0.0, 0.0))
+        for final_obs in info["final_obs"]:
+            lane_arrays = {key: final_obs[key] for key in arrays}
+            assert env.single_observation_space.contains(lane_arrays)
     finally:
         env.close()
 

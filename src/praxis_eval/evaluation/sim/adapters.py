@@ -49,7 +49,7 @@ class LocalPolicyAdapter(nn.Module):
 
     @torch.inference_mode()
     def select_action(self, batch: dict[str, Any]) -> Tensor:
-        observations = _split_batched_observations(batch)
+        observations = split_policy_observations(policy_observation_batch(batch))
         action = self.policy.act(
             observations,
             action_spec=self.action_spec,
@@ -78,7 +78,8 @@ def policy_observation_batch(batch: dict[str, Any]) -> dict[str, Any]:
     Drops rollout bookkeeping keys and ``None`` values, turns tensors into numpy
     arrays and sequences into lists, and keeps scalar metadata as one scalar
     shared by every example. ``LocalPolicyAdapter`` splits this per example for
-    ``Policy.act``; ``EvalVectorEnv`` returns it as is.
+    ``Policy.act`` with ``split_policy_observations``; ``EvalVectorEnv`` returns
+    it as is.
     """
     batch_size = _infer_batch_size(batch)
     values: dict[str, Any] = {}
@@ -121,18 +122,18 @@ def policy_observation_batch(batch: dict[str, Any]) -> dict[str, Any]:
     return values
 
 
-def _split_batched_observations(
-    batch: dict[str, Any],
+def split_policy_observations(
+    values: dict[str, Any],
 ) -> list[dict[str, ObservationValue]]:
-    """Split a batch-first observation dict into per-example numpy observations.
+    """Split ``policy_observation_batch`` output into per-example observations.
 
-    Scalar metadata is broadcast across all examples. Tensor, ndarray, and
-    sequence values determine and validate the batch size.
+    These are the observations ``Policy.act`` receives. Scalar metadata is shared
+    by all examples.
     """
-    batch_size = _infer_batch_size(batch)
+    batch_size = _infer_batch_size(values)
     observations: list[dict[str, ObservationValue]] = [{} for _ in range(batch_size)]
 
-    for key, value in policy_observation_batch(batch).items():
+    for key, value in values.items():
         for index, observation in enumerate(observations):
             if isinstance(value, np.ndarray):
                 observation[key] = np.asarray(value[index])

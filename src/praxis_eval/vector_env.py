@@ -12,6 +12,7 @@ from typing import Any
 import gymnasium as gym
 import numpy as np
 import torch
+from gymnasium.vector.utils import batch_space, create_empty_array
 from gymnasium.vector.vector_env import AutoresetMode
 
 from praxis_eval.contracts import ActionSpec
@@ -21,6 +22,7 @@ from praxis_eval.evaluation.config import require_positive_int
 from praxis_eval.evaluation.sim.adapters import (
     _action_spec_without_bounds,
     policy_observation_batch,
+    split_policy_observations,
 )
 from praxis_eval.evaluation.sim.rollout_compat import (
     _RolloutEnvCompat,
@@ -84,15 +86,17 @@ class EvalVectorEnv(gym.vector.VectorEnv):
 
     Observations are the batched values ``evaluate()`` passes to policies: numpy
     arrays with a leading lane axis, ``task`` as a list of strings, and scalar
-    metadata shared by all lanes. Actions are float32 ``(num_envs, action_dim)``
-    and go through the same validation and clipping as eval actions.
+    metadata shared by all lanes. ``observation_space`` describes the arrays.
+    Actions are float32 ``(num_envs, action_dim)`` and go through the same
+    validation and clipping as eval actions.
 
     A lane is done when its env terminates or after ``episode_length`` steps,
     which is reported as truncation. Done lanes start their next episode inside
-    the same ``step()`` call (gymnasium's SAME_STEP autoreset): the returned
-    observation is the new episode's first one, ``info["final_observation"]``
-    holds the processed last observation, and ``info["_final_observation"]`` marks
-    the done lanes. ``info["is_success"]`` holds per-lane success.
+    the same ``step()`` call, and ``info`` has the layout of gymnasium's
+    ``SyncVectorEnv`` in SAME_STEP mode: ``info["final_obs"]`` holds each done
+    lane's last observation, ``info["final_info"]`` its last step info, whose
+    ``is_success`` is the success ``evaluate()`` records, and a done lane's
+    top-level info is its reset info.
 
     Episodes follow the eval runner's numbering: the k-th episode of a task runs
     the job ``EvalLaneJob(task_group, task_id, k, k * n_tasks + task_index)`` and
@@ -144,6 +148,19 @@ class EvalVectorEnv(gym.vector.VectorEnv):
             self._env = _RolloutEnvCompat(env_pool)
             self.single_action_space = env_pool.single_action_space
             self.action_space = env_pool.action_space
+            # Every raw observation fits the pool's space (the async pool's shared
+            # memory is laid out from it), so processing a zero observation gives
+            # the processed keys, shapes, and dtypes.
+            self.single_observation_space = _array_observation_space(
+                self._process(
+                    create_empty_array(
+                        env_pool.single_observation_space, self.num_envs, np.zeros
+                    )
+                )
+            )
+            self.observation_space = batch_space(
+                self.single_observation_space, self.num_envs
+            )
             if episode_length is None:
                 horizons = env_pool.call("_max_episode_steps")
             else:
@@ -187,7 +204,7 @@ class EvalVectorEnv(gym.vector.VectorEnv):
             actions, batch_size=self.num_envs, action_spec=self._action_spec
         )
         actions = postprocess_action(torch.from_numpy(actions), self._env_postprocessor)
-        raw_observation, rewards, terminations, truncations, info = self._env.step(
+        raw_observation, rewards, terminations, truncations, step_info = self._env.step(
             actions
         )
         self._elapsed += 1
@@ -195,14 +212,31 @@ class EvalVectorEnv(gym.vector.VectorEnv):
         truncations = np.asarray(truncations, dtype=bool) | (
             self._elapsed >= self._episode_lengths
         )
-        info = {**info, "is_success": step_successes(info, self.num_envs)}
-        observation = self._process(raw_observation)
-
         done = terminations | truncations
-        if done.any():
-            info["final_observation"] = observation
-            info["_final_observation"] = done
-            observation, _ = self._start_episodes(done)
+        if not done.any():
+            observation = self._process(raw_observation)
+            return observation, rewards, terminations, truncations, step_info
+
+        successes = step_successes(step_info, self.num_envs)
+        final_observations = split_policy_observations(self._process(raw_observation))
+        observation, reset_info = self._start_episodes(done)
+        # Built lane by lane like gymnasium's SyncVectorEnv in SAME_STEP mode: a
+        # done lane's step info moves to final_info and its reset info replaces it.
+        info: dict[str, Any] = {}
+        for lane in range(self.num_envs):
+            if not done[lane]:
+                info = self._add_info(info, _lane_info(step_info, lane), lane)
+                continue
+            final_info = {
+                **_lane_info(step_info, lane),
+                "is_success": bool(successes[lane]),
+            }
+            info = self._add_info(
+                info,
+                {"final_obs": final_observations[lane], "final_info": final_info},
+                lane,
+            )
+            info = self._add_info(info, _lane_info(reset_info, lane), lane)
         return observation, rewards, terminations, truncations, info
 
     def close_extras(self, **kwargs: Any) -> None:
@@ -237,6 +271,47 @@ class EvalVectorEnv(gym.vector.VectorEnv):
         return policy_observation_batch(
             process_observation(self._env, raw_observation, self._env_preprocessor)
         )
+
+
+def _array_observation_space(observation: dict[str, Any]) -> gym.spaces.Dict:
+    """Return the single-lane space of a batched observation's array values.
+
+    Bounds are the widest the dtype allows, since processing does not map raw
+    space bounds to processed ones.
+    """
+    spaces: dict[str, gym.spaces.Space] = {}
+    for key, value in observation.items():
+        if not isinstance(value, np.ndarray):
+            continue
+        if np.issubdtype(value.dtype, np.floating):
+            low, high = -np.inf, np.inf
+        elif np.issubdtype(value.dtype, np.integer):
+            low, high = np.iinfo(value.dtype).min, np.iinfo(value.dtype).max
+        else:
+            raise TypeError(
+                f"Observation key {key!r} has dtype {value.dtype}, which no Box "
+                "space describes."
+            )
+        spaces[key] = gym.spaces.Box(low, high, value.shape[1:], value.dtype)
+    return gym.spaces.Dict(spaces)
+
+
+def _lane_info(info: dict[str, Any], lane: int) -> dict[str, Any]:
+    """Return one lane's info from a batched info dict (inverts ``_add_info``)."""
+    lane_info: dict[str, Any] = {}
+    for key, value in info.items():
+        if key.startswith("_") and key[1:] in info:
+            continue  # a mask
+        if not info[f"_{key}"][lane]:
+            continue
+        if isinstance(value, dict):
+            lane_info[key] = _lane_info(value, lane)
+        elif value.dtype == np.bool_:
+            # A Python bool, so _add_info batches it into a bool array again.
+            lane_info[key] = bool(value[lane])
+        else:
+            lane_info[key] = value[lane]
+    return lane_info
 
 
 def _check_supports_masked_reset(env_pool: gym.vector.VectorEnv) -> None:
