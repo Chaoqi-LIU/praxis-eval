@@ -171,11 +171,11 @@ class LiberoEvalLaneWrapper(gym.Wrapper):
         return str(getattr(self.env, "task_description", ""))
 
     def prepare_eval_job(
-        self, task_id: int, episode_index: int, task_group: str | None = None
+        self, task_id: int, init_state_index: int, task_group: str | None = None
     ) -> None:
         """Prepare this lane for one eval job."""
         task_id = int(task_id)
-        episode_index = int(episode_index)
+        init_state_index = int(init_state_index)
 
         suite_changed = False
         if task_group is not None and task_group != self._suite_name:
@@ -185,11 +185,11 @@ class LiberoEvalLaneWrapper(gym.Wrapper):
 
         current_task_id = int(getattr(self.env, "task_id", -1))
         if task_id != current_task_id or suite_changed:
-            self._rebuild_env(task_id=task_id, episode_index=episode_index)
+            self._rebuild_env(task_id=task_id, init_state_index=init_state_index)
         else:
-            self.env.init_state_id = episode_index
+            self.env.init_state_id = init_state_index
 
-    def _rebuild_env(self, *, task_id: int, episode_index: int) -> None:
+    def _rebuild_env(self, *, task_id: int, init_state_index: int) -> None:
         from praxis_eval.envs.libero.env import LiberoEnv, get_suite
 
         self.env.close()
@@ -210,7 +210,7 @@ class LiberoEvalLaneWrapper(gym.Wrapper):
                 visualization_width=self._visualization_width,
                 visualization_height=self._visualization_height,
                 init_states=self._init_states,
-                episode_index=int(episode_index),
+                episode_index=int(init_state_index),
                 n_envs=self._n_envs,
                 camera_name_mapping=self._camera_name_mapping,
                 num_steps_wait=self._num_steps_wait,

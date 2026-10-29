@@ -400,7 +400,8 @@ if loaded:
         env_kwargs = captured["env_kwargs"]
         assert isinstance(env_kwargs, list)
         assert [kwargs["task_id"] for kwargs in env_kwargs] == [0, 1]
-        assert [kwargs["episode_index"] for kwargs in env_kwargs] == [3, 7]
+        # LIBERO lanes start from the per-task init state (eval_idx), not the global episode index.
+        assert [kwargs["episode_index"] for kwargs in env_kwargs] == [0, 0]
         assert [kwargs["reset_stride"] for kwargs in env_kwargs] == [2, 2]
         gym_kwargs = env_kwargs[0]["gym_kwargs"]
         assert isinstance(gym_kwargs, dict)
@@ -417,7 +418,7 @@ if loaded:
         assert first_pool.call_each_calls == [
             (
                 "prepare_eval_job",
-                [(2, 11), (3, 13)],
+                [(2, 1), (3, 1)],
                 [{"task_group": "libero_10"}, {"task_group": "libero_10"}],
             )
         ]
