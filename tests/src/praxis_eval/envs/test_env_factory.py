@@ -24,6 +24,75 @@ from praxis_eval.envs.factory import (
 from praxis_eval.envs.libero.eval import make_libero_eval_pool
 
 
+class _FakeAsyncVectorEnv:
+    def __init__(self, env_fns, *, dummy_env_fn):
+        self.env_fns = env_fns
+        self.dummy_env_fn = dummy_env_fn
+        self.num_envs = len(env_fns)
+        self.instances = [fn() for fn in env_fns]
+        self.call_each_calls = []
+
+    def call_each(self, name, *, args_list, kwargs_list):
+        self.call_each_calls.append((name, args_list, kwargs_list))
+        return tuple([None] * self.num_envs)
+
+
+def _install_fake_libero_workers(monkeypatch) -> tuple[dict[str, object], list[str]]:
+    """Replace LIBERO lane construction and the async pool with fakes that record their arguments."""
+    async_vec_mod = importlib.import_module("praxis_eval.envs.async_vector_env")
+    libero_eval_mod = importlib.import_module("praxis_eval.envs.libero.eval")
+    libero_runtime = importlib.import_module("praxis_eval.envs.libero.runtime")
+
+    captured: dict[str, object] = {}
+    suite_calls: list[str] = []
+
+    fake_env_module = types.ModuleType("praxis_eval.envs.libero.env")
+    fake_env_module.get_suite = lambda suite_name: (
+        suite_calls.append(suite_name) or object()
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "praxis_eval.envs.libero.env",
+        fake_env_module,
+    )
+
+    monkeypatch.setattr(
+        libero_runtime,
+        "make_dummy_libero_env_fn",
+        lambda **kwargs: lambda: object(),
+    )
+
+    def _fake_make_libero_env_fn(**kwargs):
+        captured.setdefault("env_kwargs", []).append(kwargs)
+        return lambda: {
+            "task_id": kwargs["task_id"],
+            "episode_index": kwargs["episode_index"],
+            "reset_stride": kwargs["reset_stride"],
+            "gym_kwargs": kwargs["gym_kwargs"],
+        }
+
+    def _fake_construct_libero_eval_lane(
+        env_fn, *, suite_name, lane_idx, debug_verbose
+    ):
+        return {
+            "env": env_fn(),
+            "suite_name": suite_name,
+            "lane_idx": lane_idx,
+            "debug_verbose": debug_verbose,
+        }
+
+    monkeypatch.setattr(libero_runtime, "make_libero_env_fn", _fake_make_libero_env_fn)
+    monkeypatch.setattr(
+        libero_runtime,
+        "construct_libero_eval_lane",
+        _fake_construct_libero_eval_lane,
+    )
+
+    monkeypatch.setattr(async_vec_mod, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+    monkeypatch.setattr(libero_eval_mod, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+    return captured, suite_calls
+
+
 class TestEnvFactory:
     def test_factory_import_does_not_import_heavy_libero_stack(self):
         script = """
@@ -311,71 +380,7 @@ if loaded:
     def test_make_libero_eval_pool_strips_task_ids_from_worker_ctor_kwargs(
         self, monkeypatch
     ):
-        async_vec_mod = importlib.import_module("praxis_eval.envs.async_vector_env")
-        libero_eval_mod = importlib.import_module("praxis_eval.envs.libero.eval")
-        libero_runtime = importlib.import_module("praxis_eval.envs.libero.runtime")
-
-        captured: dict[str, object] = {}
-        suite_calls: list[str] = []
-
-        fake_env_module = types.ModuleType("praxis_eval.envs.libero.env")
-        fake_env_module.get_suite = lambda suite_name: (
-            suite_calls.append(suite_name) or object()
-        )
-        monkeypatch.setitem(
-            sys.modules,
-            "praxis_eval.envs.libero.env",
-            fake_env_module,
-        )
-
-        monkeypatch.setattr(
-            libero_runtime,
-            "make_dummy_libero_env_fn",
-            lambda **kwargs: lambda: object(),
-        )
-
-        def _fake_make_libero_env_fn(**kwargs):
-            captured.setdefault("env_kwargs", []).append(kwargs)
-            return lambda: {
-                "task_id": kwargs["task_id"],
-                "episode_index": kwargs["episode_index"],
-                "reset_stride": kwargs["reset_stride"],
-                "gym_kwargs": kwargs["gym_kwargs"],
-            }
-
-        def _fake_construct_libero_eval_lane(
-            env_fn, *, suite_name, lane_idx, debug_verbose
-        ):
-            return {
-                "env": env_fn(),
-                "suite_name": suite_name,
-                "lane_idx": lane_idx,
-                "debug_verbose": debug_verbose,
-            }
-
-        monkeypatch.setattr(
-            libero_runtime, "make_libero_env_fn", _fake_make_libero_env_fn
-        )
-        monkeypatch.setattr(
-            libero_runtime,
-            "construct_libero_eval_lane",
-            _fake_construct_libero_eval_lane,
-        )
-
-        class _FakeAsyncVectorEnv:
-            def __init__(self, env_fns, *, dummy_env_fn):
-                self.env_fns = env_fns
-                self.dummy_env_fn = dummy_env_fn
-                self.num_envs = len(env_fns)
-                self.instances = [fn() for fn in env_fns]
-                self.call_each_calls = []
-
-            def call_each(self, name, *, args_list, kwargs_list):
-                self.call_each_calls.append((name, args_list, kwargs_list))
-                return tuple([None] * self.num_envs)
-
-        monkeypatch.setattr(async_vec_mod, "AsyncVectorEnv", _FakeAsyncVectorEnv)
-        monkeypatch.setattr(libero_eval_mod, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+        captured, suite_calls = _install_fake_libero_workers(monkeypatch)
 
         pool = make_libero_eval_pool(
             {
@@ -400,7 +405,8 @@ if loaded:
         env_kwargs = captured["env_kwargs"]
         assert isinstance(env_kwargs, list)
         assert [kwargs["task_id"] for kwargs in env_kwargs] == [0, 1]
-        assert [kwargs["episode_index"] for kwargs in env_kwargs] == [3, 7]
+        # LIBERO lanes start from the per-task init state (eval_idx), not the global episode index.
+        assert [kwargs["episode_index"] for kwargs in env_kwargs] == [0, 0]
         assert [kwargs["reset_stride"] for kwargs in env_kwargs] == [2, 2]
         gym_kwargs = env_kwargs[0]["gym_kwargs"]
         assert isinstance(gym_kwargs, dict)
@@ -417,10 +423,39 @@ if loaded:
         assert first_pool.call_each_calls == [
             (
                 "prepare_eval_job",
-                [(2, 11), (3, 13)],
+                [(2, 1), (3, 1)],
                 [{"task_group": "libero_10"}, {"task_group": "libero_10"}],
             )
         ]
+
+    def test_libero_eval_pool_gives_each_task_init_states_in_eval_order(
+        self, monkeypatch
+    ):
+        captured, _ = _install_fake_libero_workers(monkeypatch)
+        num_tasks, evals_per_task = 3, 4
+        pool = make_libero_eval_pool(
+            {"type": "libero", "task": "libero_10"}, n_envs=num_tasks
+        )
+        for eval_idx in range(evals_per_task):
+            # Jobs as the runner builds them: one lane per task, global episode index for seeding.
+            pool.prepare_jobs(
+                [
+                    EvalLaneJob(
+                        "libero_10", task_id, eval_idx, eval_idx * num_tasks + task_id
+                    )
+                    for task_id in range(num_tasks)
+                ]
+            )
+
+        init_states: dict[int, list[int]] = {task: [] for task in range(num_tasks)}
+        for kwargs in captured["env_kwargs"]:
+            init_states[kwargs["task_id"]].append(kwargs["episode_index"])
+        for _, args_list, _ in pool.env_pool.call_each_calls:
+            for task_id, init_state_index in args_list:
+                init_states[task_id].append(init_state_index)
+        assert init_states == {
+            task: list(range(evals_per_task)) for task in range(num_tasks)
+        }
 
     def test_libero_camera_parser_is_local(self):
         from praxis_eval.envs.libero.spec import parse_camera_names

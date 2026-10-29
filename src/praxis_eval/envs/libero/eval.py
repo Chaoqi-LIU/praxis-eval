@@ -101,7 +101,8 @@ def _make_lane_env_fn(
         suite=suite,
         suite_name=suite_name,
         task_id=int(lane_job.task_id),
-        episode_index=int(lane_job.episode_index),
+        # LIBERO init states are per task: the k-th eval of a task uses init state k.
+        episode_index=int(lane_job.eval_idx),
         reset_stride=int(reset_stride),
         camera_names=camera_names,
         episode_length=episode_length,
@@ -220,6 +221,6 @@ def _prepare_libero_eval_jobs(
     else:
         env_pool = env_pool_or_handle
 
-    args_list = [(int(job.task_id), int(job.episode_index)) for job in prepared_jobs]
+    args_list = [(int(job.task_id), int(job.eval_idx)) for job in prepared_jobs]
     kwargs_list = [{"task_group": str(job.task_group)} for job in prepared_jobs]
     env_pool.call_each("prepare_eval_job", args_list=args_list, kwargs_list=kwargs_list)
