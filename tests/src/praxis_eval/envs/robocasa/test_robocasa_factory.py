@@ -880,6 +880,47 @@ class TestRobocasaEnvResetRetry:
         assert truncated is False
         assert info["is_success"] is False
 
+    def test_step_reports_horizon_as_truncated_and_success_as_terminated(
+        self,
+    ) -> None:
+        import numpy as np
+
+        from praxis_eval.envs.robocasa.env import RobocasaEnv
+
+        class _FakeRawEnv:
+            def __init__(self, success_at: int | None) -> None:
+                self.timestep = 0
+                self.success_at = success_at
+
+            def step(self, action: np.ndarray):
+                self.timestep += 1
+                return {}, 0.0, False, {}
+
+            def _check_success(self) -> bool:
+                return self.timestep == self.success_at
+
+        def _run_to_horizon(success_at: int | None) -> list[tuple[Any, ...]]:
+            env = RobocasaEnv.__new__(RobocasaEnv)
+            env.env = _FakeRawEnv(success_at)
+            env.task_name = "OpenDrawer"
+            env._step_count = 0
+            env._max_episode_steps = 2
+            env._done = False
+            env._extract_obs = lambda raw_obs: raw_obs
+            action = np.zeros(12, dtype=np.float32)
+            return [RobocasaEnv.step(env, action)[2:] for _ in range(2)]
+
+        first, last = _run_to_horizon(success_at=None)
+        assert first == (False, False, {"is_success": False})
+        terminated, truncated, info = last
+        assert (terminated, truncated) == (False, True)
+        assert info["final_info"]["is_success"] is False
+
+        # Success on the horizon step is termination, not truncation.
+        _, (terminated, truncated, info) = _run_to_horizon(success_at=2)
+        assert (terminated, truncated) == (True, False)
+        assert info["final_info"]["is_success"] is True
+
     def test_step_rejects_non_robocasa_action_shape(self) -> None:
         import numpy as np
 
