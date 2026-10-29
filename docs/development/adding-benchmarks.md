@@ -108,6 +108,7 @@ For async pool benchmarks, provide:
 - a dummy env that exposes observation and action spaces without initializing the simulator;
 - a real env factory for workers;
 - a worker wrapper with `prepare_eval_job(...)`;
+- a `_max_episode_steps` attribute on each worker env: the evaluator ends each episode after that many steps, even if the env never truncates;
 - an eval pool builder registered with the factory.
 
 The existing LIBERO, RoboCasa, RoboMimic, and MetaWorld drivers are the best references.

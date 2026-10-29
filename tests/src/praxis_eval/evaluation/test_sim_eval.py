@@ -86,6 +86,14 @@ class _RecordingTinyEnv(_TinyEnv):
         return super().step(action)
 
 
+class _NoTimeLimitTinyEnv(_TinyEnv):
+    """Ends only on success, like LeRobot's LIBERO env, never at its horizon."""
+
+    def step(self, action):
+        obs, reward, _, truncated, info = super().step(action)
+        return obs, reward, bool(info["is_success"]), truncated, info
+
+
 class _TinyPolicy:
     def __init__(self):
         self.last_kwargs: dict[str, object] | None = None
@@ -1194,6 +1202,46 @@ class TestSimEval:
         ]
         assert [result.lengths for result in results] == [[300], [400]]
         assert [result.successes for result in results] == [[False], [True]]
+
+    @pytest.mark.parametrize(
+        ("vector_env_cls", "step_timeout_sec"),
+        [(gym.vector.SyncVectorEnv, None), (gym.vector.AsyncVectorEnv, 30.0)],
+    )
+    def test_rollout_compat_ends_each_lane_at_its_own_horizon(
+        self, vector_env_cls, step_timeout_sec, monkeypatch, tmp_path
+    ):
+        # Lane 0 has a 3-step horizon but would succeed at step 5; lane 1 never
+        # succeeds, so its 8-step horizon caps the wave.
+        env = vector_env_cls(
+            [
+                partial(_NoTimeLimitTinyEnv, success_at=5, max_steps=3),
+                partial(_NoTimeLimitTinyEnv, success_at=99, max_steps=8),
+            ],
+            autoreset_mode=gym.vector.AutoresetMode.SAME_STEP,
+        )
+        policy = LocalPolicyAdapter(policy=_TinyPolicy(), device="cpu")
+        video_lengths: dict[str, int] = {}
+        monkeypatch.setattr(
+            rollout_compat,
+            "write_video",
+            lambda path, frames, fps: video_lengths.update({path: len(frames)}),
+        )
+
+        try:
+            results = rollout_compat.evaluate_policy_on_pooled_env(
+                env=env,
+                policy=policy,
+                step_timeout_sec=step_timeout_sec,
+                max_episodes_rendered_by_env=[1, 1],
+                videos_dirs_by_env=[tmp_path / "lane0", tmp_path / "lane1"],
+            )
+        finally:
+            env.close()
+
+        assert [result.lengths for result in results] == [[3], [8]]
+        assert [result.successes for result in results] == [[False], [False]]
+        assert [result.sum_rewards for result in results] == [[0.0], [0.0]]
+        assert [video_lengths[result.video_paths[0]] for result in results] == [3, 8]
 
     def test_rollout_compat_rejects_non_finite_actions_before_step(self):
         env = gym.vector.SyncVectorEnv(

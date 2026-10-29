@@ -78,17 +78,6 @@ class _RolloutEnvCompat:
         return normalized
 
     def call(self, name: str, *args, **kwargs):
-        if name == "_max_episode_steps":
-            env = cast(_VectorEnvWithCall, self._env)
-            values = env.call(name, *args, **kwargs)
-            normalized = _int_list_or_none(values)
-            if normalized is None:
-                return values
-
-            # LeRobot rollout reads only the first lane's horizon and uses it as
-            # the batch-wide cap, so expose the longest per-lane horizon here.
-            max_steps = max(normalized)
-            return [max_steps] * self.num_envs
         if name == "task_description" and not self._has_task_description:
             if self._has_task:
                 return self._call_or_empty("task")
@@ -121,12 +110,77 @@ class _RolloutEnvCompat:
         return getattr(self._env, name)
 
 
+class _LaneHorizonVectorEnv:
+    """Ends each lane's episode at that lane's own ``_max_episode_steps``.
+
+    One pool can mix tasks with different horizons, e.g. ``libero_spatial`` (280
+    steps) and ``libero_10`` (520), and not every env ends at its horizon on its
+    own: LeRobot's ``LiberoEnv`` never truncates. The rollout loop reads lane 0's
+    ``_max_episode_steps`` as the step cap for the whole wave, so this adapter
+    reports the longest horizon there and marks a lane ``truncated`` once it has
+    taken its own horizon in steps since the last reset. ``_StepTimeoutVectorEnv``
+    drives async pools through ``reset_wait`` and ``step_wait``, so those do the
+    same bookkeeping as ``reset`` and ``step``.
+    """
+
+    def __init__(self, env: _RolloutEnvCompat) -> None:
+        self._env = env
+        self.num_envs = int(env.num_envs)
+        self._horizons: np.ndarray | None = None
+        self._elapsed = np.zeros(self.num_envs, dtype=np.int64)
+
+    def reset(self, **kwargs):
+        return self._start_episodes(self._env.reset(**kwargs))
+
+    def reset_wait(self, **kwargs):
+        return self._start_episodes(self._env.reset_wait(**kwargs))
+
+    def step(self, action):
+        return self._end_lanes_at_horizon(self._env.step(action))
+
+    def step_wait(self, **kwargs):
+        return self._end_lanes_at_horizon(self._env.step_wait(**kwargs))
+
+    def call(self, name: str, *args, **kwargs):
+        if name == "_max_episode_steps":
+            return [int(self._lane_horizons().max())] * self.num_envs
+        return self._env.call(name, *args, **kwargs)
+
+    def _start_episodes(self, reset_result):
+        # Read after the reset, like LeRobot's rollout: a lane's horizon follows
+        # the task its job prepared.
+        values = self._env.call("_max_episode_steps")
+        horizons = _int_list_or_none(values)
+        if horizons is None or len(horizons) != self.num_envs:
+            raise ValueError(
+                f"Expected one integer _max_episode_steps per lane, got {values!r}."
+            )
+        self._horizons = np.asarray(horizons, dtype=np.int64)
+        self._elapsed = np.zeros(self.num_envs, dtype=np.int64)
+        return reset_result
+
+    def _end_lanes_at_horizon(self, step_result):
+        horizons = self._lane_horizons()
+        observation, reward, terminated, truncated, info = step_result
+        self._elapsed += 1
+        truncated = np.asarray(truncated, dtype=bool) | (self._elapsed >= horizons)
+        return observation, reward, terminated, truncated, info
+
+    def _lane_horizons(self) -> np.ndarray:
+        if self._horizons is None:
+            raise RuntimeError("Call reset() before step() or reading lane horizons.")
+        return self._horizons
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._env, name)
+
+
 class _StepTimeoutVectorEnv:
     """Vector env adapter that enforces reset/step timeouts on async pools."""
 
     def __init__(
         self,
-        env: gym.vector.VectorEnv | _RolloutEnvCompat,
+        env: gym.vector.VectorEnv | _RolloutEnvCompat | _LaneHorizonVectorEnv,
         *,
         timeout_sec: float,
         phase_heartbeat: Callable[[str], None] | None = None,
@@ -141,9 +195,9 @@ class _StepTimeoutVectorEnv:
     def reset(self, **kwargs):
         base_env = _unwrap_rollout_env(cast(gym.vector.VectorEnv, self._env))
         if isinstance(base_env, gym.vector.AsyncVectorEnv):
-            base_env.reset_async(**kwargs)
+            self._env.reset_async(**kwargs)
             try:
-                result = base_env.reset_wait(timeout=self._timeout_sec)
+                result = self._env.reset_wait(timeout=self._timeout_sec)
                 if self._phase_heartbeat is not None:
                     self._phase_heartbeat("reset_wait_return")
                 return result
@@ -160,9 +214,9 @@ class _StepTimeoutVectorEnv:
                 action,
                 action_space=getattr(base_env, "action_space", None),
             )
-            base_env.step_async(action)
+            self._env.step_async(action)
             try:
-                result = base_env.step_wait(timeout=self._timeout_sec)
+                result = self._env.step_wait(timeout=self._timeout_sec)
                 if self._phase_heartbeat is not None:
                     self._phase_heartbeat("step_wait_return")
                 return result
@@ -454,9 +508,12 @@ def _int_list_or_none(values: Any) -> list[int] | None:
 
 
 def _unwrap_rollout_env(env: gym.vector.VectorEnv) -> gym.vector.VectorEnv:
-    """Return underlying vector env (for adapters/wrappers)."""
-    inner = getattr(env, "_env", None)
-    return inner if isinstance(inner, gym.vector.VectorEnv) else env
+    """Return the vector env under this module's rollout adapters."""
+    while isinstance(
+        env, _RolloutEnvCompat | _LaneHorizonVectorEnv | _StepTimeoutVectorEnv
+    ):
+        env = env._env
+    return env
 
 
 def _resolve_render_fps(env: gym.vector.VectorEnv) -> int:
@@ -707,7 +764,7 @@ def evaluate_policy_on_pooled_env(
                 continue
             lane_frames[lane_idx].append(frame)
 
-    rollout_env: gym.vector.VectorEnv | _RolloutEnvCompat | _StepTimeoutVectorEnv = (
+    rollout_env: _LaneHorizonVectorEnv | _StepTimeoutVectorEnv = _LaneHorizonVectorEnv(
         _RolloutEnvCompat(env)
     )
     if step_timeout_sec is not None and float(step_timeout_sec) > 0.0:
