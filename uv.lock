@@ -3187,8 +3187,8 @@ requires-dist = [
     { name = "omegaconf", marker = "extra == 'robocasa-gr1'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'robomimic'", specifier = ">=2.3.0" },
     { name = "omegaconf", marker = "extra == 'simpler'", specifier = ">=2.3.0" },
-    { name = "praxis-libero", marker = "extra == 'all'", specifier = "==0.1.1.post1" },
-    { name = "praxis-libero", marker = "extra == 'libero'", specifier = "==0.1.1.post1" },
+    { name = "praxis-libero", marker = "extra == 'all'", specifier = "==0.1.1.post2" },
+    { name = "praxis-libero", marker = "extra == 'libero'", specifier = "==0.1.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'all'", specifier = "==0.0.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'dev'", specifier = "==0.0.1.post2" },
     { name = "praxis-mshab", marker = "extra == 'mshab'", specifier = "==0.0.1.post2" },
@@ -3238,7 +3238,7 @@ provides-extras = ["dev", "remote", "libero", "metaworld", "robocasa", "robocasa
 
 [[package]]
 name = "praxis-libero"
-version = "0.1.1.post1"
+version = "0.1.1.post2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bddl" },
@@ -3259,9 +3259,9 @@ dependencies = [
     { name = "transformers" },
     { name = "wandb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/96/432a0b6567764e0c5a0e752f4ed1a32d3e744c94349958627fafe5a5a40a/praxis_libero-0.1.1.post1.tar.gz", hash = "sha256:0eec9533bdc676ab2e6a08f04eeaa7ec5fc3e93bbd09d3bec71adc1e96e96445", size = 2981805, upload-time = "2026-07-22T11:35:27.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/0b/787bb043f9e99dc4a78f949fe5932b55cabab4b791c54ecc59cb4222ac1c/praxis_libero-0.1.1.post2.tar.gz", hash = "sha256:6442d4a4d0f7bc4b85123ee597d8dd6101e48acef797ecfd75a20c884af7d99b", size = 2983063, upload-time = "2026-10-29T22:26:48.802Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/93/e8066f41d9bb417834411026e02685b06e64cbf84e775579d7013c911e57/praxis_libero-0.1.1.post1-py3-none-any.whl", hash = "sha256:c42f9993949eca2eaadea9c103452b40dbb9c162e37c094ea92262a012f6d730", size = 3193140, upload-time = "2026-07-22T11:35:26.072Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/fc/b7fad8778ce1b9d43d8fba9076f2e357867400534fa6c37331515f40862a/praxis_libero-0.1.1.post2-py3-none-any.whl", hash = "sha256:88a45d8340d979b3fda15411a02e4efd4606d5704bf631345f1462a0a970aae2", size = 3193172, upload-time = "2026-10-29T22:26:46.57Z" },
 ]
 
 [[package]]
