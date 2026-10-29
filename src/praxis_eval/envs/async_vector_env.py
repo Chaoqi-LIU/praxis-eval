@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import inspect
 import multiprocessing
 import time
 from collections.abc import Callable, Sequence
@@ -149,6 +150,10 @@ class AsyncVectorEnv(gym.vector.AsyncVectorEnv):
         self.parent_pipes, self.processes = [], []
         self.error_queue = ctx.Queue()
         target = worker or _async_worker
+        # gymnasium >= 1.4 workers take a trailing `semaphore`; None keeps concurrency unlimited.
+        semaphore_arg = (
+            (None,) if "semaphore" in inspect.signature(target).parameters else ()
+        )
         with clear_mpi_env_vars():
             for idx, env_fn in enumerate(self.env_fns):
                 parent_pipe, child_pipe = ctx.Pipe()
@@ -163,6 +168,7 @@ class AsyncVectorEnv(gym.vector.AsyncVectorEnv):
                         _obs_buffer,
                         self.error_queue,
                         self.autoreset_mode,
+                        *semaphore_arg,
                     ),
                 )
 
