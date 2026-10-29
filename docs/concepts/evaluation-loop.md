@@ -30,7 +30,7 @@ Most current-environment benchmarks use the async pool path:
 6. Step environments, collect terminal metrics, and optionally record videos.
 7. Aggregate overall, per-group, and per-task metrics.
 
-Each lane's episode ends when its environment terminates or truncates, or after that lane's own `_max_episode_steps` steps, whichever comes first. This holds when one call mixes tasks with different horizons, such as `libero_spatial` (280 steps) and `libero_10` (520 steps), and for environments that never truncate on their own. A wave runs until every lane is done, for at most the longest horizon among its lanes; steps a lane takes after its episode ended do not count toward its metrics or video.
+Each lane's episode ends when its environment terminates or truncates, or after that lane's own `_max_episode_steps` steps, whichever comes first. This holds when one call mixes tasks with different horizons, such as `libero_spatial` (280 steps) and `libero_10` (520 steps), and for environments that never truncate on their own. A wave runs until every lane is done, for at most the longest horizon among its lanes; steps a lane takes after its episode ended do not count toward its metrics or video. A lane whose environment terminated or truncated waits for the rest of the wave without stepping or resetting its environment.
 
 SimplerEnv and MS-HAB use a subprocess path. The evaluator starts or uses a `praxis-remote` policy endpoint, runs the external simulator command in the dedicated runtime, then reads task metrics and artifacts from disk.
 

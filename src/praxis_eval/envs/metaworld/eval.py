@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from praxis_eval.envs.async_vector_env import AsyncVectorEnv
+from praxis_eval.envs.async_vector_env import AsyncVectorEnv, make_eval_env_pool
 from praxis_eval.envs.eval_pool import EvalLaneJob, EvalPoolHandle
 from praxis_eval.envs.metaworld.tasks import resolve_task_name
 
@@ -114,7 +114,7 @@ def _build_env_pool_for_lane_jobs(
         )
         for lane_idx, lane_job in enumerate(lane_jobs)
     ]
-    return AsyncVectorEnv(env_fns, dummy_env_fn=dummy_env_fn)
+    return make_eval_env_pool(env_fns, dummy_env_fn=dummy_env_fn)
 
 
 def _prepare_metaworld_eval_jobs(

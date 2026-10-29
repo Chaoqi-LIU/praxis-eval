@@ -216,7 +216,7 @@ class TestMetaworldFactoryRegistration:
             env["lane_idx"] = lane_idx
             return env
 
-        monkeypatch.setattr(metaworld_eval, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+        monkeypatch.setattr(metaworld_eval, "make_eval_env_pool", _FakeAsyncVectorEnv)
         monkeypatch.setattr(
             runtime_mod,
             "make_dummy_metaworld_env_fn",

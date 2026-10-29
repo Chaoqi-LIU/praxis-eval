@@ -89,7 +89,7 @@ def _install_fake_libero_workers(monkeypatch) -> tuple[dict[str, object], list[s
     )
 
     monkeypatch.setattr(async_vec_mod, "AsyncVectorEnv", _FakeAsyncVectorEnv)
-    monkeypatch.setattr(libero_eval_mod, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+    monkeypatch.setattr(libero_eval_mod, "make_eval_env_pool", _FakeAsyncVectorEnv)
     return captured, suite_calls
 
 

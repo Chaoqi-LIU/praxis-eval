@@ -11,6 +11,7 @@ import multiprocessing
 import time
 from collections.abc import Callable, Sequence
 from contextlib import suppress
+from functools import partial
 from typing import Any, cast
 
 import gymnasium as gym
@@ -308,3 +309,48 @@ class AsyncVectorEnv(gym.vector.AsyncVectorEnv):
         self._raise_if_errors(successes)
         self._state = AsyncState.DEFAULT
         return results
+
+
+def make_eval_env_pool(
+    env_fns: Sequence[Callable[[], Env]],
+    *,
+    dummy_env_fn: Callable[[], Env] | None = None,
+    context: str | None = None,
+) -> AsyncVectorEnv:
+    """Build the async pool that eval lanes run on.
+
+    Lanes never autoreset: the eval runner and ``EvalVectorEnv`` reset them
+    explicitly. Until then, a lane whose env terminated or truncated returns its
+    final observation and flags with zero reward and empty info, without stepping
+    its env, so it costs neither a reset nor simulation while its wave finishes.
+    """
+    return AsyncVectorEnv(
+        [partial(_hold_after_episode_end, env_fn) for env_fn in env_fns],
+        dummy_env_fn=dummy_env_fn,
+        context=context,
+        autoreset_mode=AutoresetMode.DISABLED,
+    )
+
+
+def _hold_after_episode_end(env_fn: Callable[[], Env]) -> Env:
+    return _HoldAfterEpisodeEnd(env_fn())
+
+
+class _HoldAfterEpisodeEnd(gym.Wrapper):
+    def __init__(self, env: Env) -> None:
+        super().__init__(env)
+        self._final_step: tuple[Any, float, bool, bool, dict[str, Any]] | None = None
+
+    def reset(
+        self, *, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[Any, dict[str, Any]]:
+        self._final_step = None
+        return self.env.reset(seed=seed, options=options)
+
+    def step(self, action: Any) -> tuple[Any, Any, bool, bool, dict[str, Any]]:
+        if self._final_step is not None:
+            return self._final_step
+        observation, reward, terminated, truncated, info = self.env.step(action)
+        if terminated or truncated:
+            self._final_step = (observation, 0.0, terminated, truncated, {})
+        return observation, reward, terminated, truncated, info

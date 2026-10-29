@@ -10,7 +10,7 @@ import logging
 import multiprocessing
 from typing import Any, cast
 
-from praxis_eval.envs.async_vector_env import AsyncVectorEnv
+from praxis_eval.envs.async_vector_env import AsyncVectorEnv, make_eval_env_pool
 from praxis_eval.envs.eval_pool import EvalLaneJob, EvalPoolHandle
 from praxis_eval.envs.robocasa_gr1.env import RobocasaGr1Env
 from praxis_eval.envs.robocasa_gr1.runtime import (
@@ -82,7 +82,7 @@ def _build_pool(
     dummy_env_fn: Any,
     mp_context: str,
 ) -> AsyncVectorEnv:
-    return AsyncVectorEnv(
+    return make_eval_env_pool(
         [
             _make_lane_env_fn(
                 task_name=str(job.task_group),
