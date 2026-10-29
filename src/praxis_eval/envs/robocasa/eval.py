@@ -45,6 +45,7 @@ def build_robocasa_eval_pool(
     tasks: list[tuple[str, int]],
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Create one persistent async eval pool for RoboCasa.
 
@@ -53,6 +54,7 @@ def build_robocasa_eval_pool(
         tasks: List of ``(task_name, task_id)`` pairs from ``list_robocasa_tasks``.
         n_envs: Number of parallel worker envs.
         debug_verbose: If True, suppress less robocasa startup noise.
+        mp_context: Worker start method. ``None`` uses fork where available.
     """
     from praxis_eval.envs.robocasa.runtime import make_dummy_robocasa_env_fn
 
@@ -78,7 +80,8 @@ def build_robocasa_eval_pool(
         camera_names=camera_names,
         image_size=image_size,
     )
-    mp_context = _resolve_robocasa_mp_context()
+    if mp_context is None:
+        mp_context = _resolve_robocasa_mp_context()
     handle = EvalPoolHandle(
         env_pool=None,
         num_envs=n_envs,

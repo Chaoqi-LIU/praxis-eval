@@ -349,6 +349,7 @@ class TestRobomimicFactoryRegistration:
             cfg,
             tasks=list_tasks({"type": "robomimic", "task": "mt3"}),
             n_envs=2,
+            mp_context="forkserver",
         )
         assert handle.env_pool is None
         assert handle.num_envs == 2
@@ -359,6 +360,7 @@ class TestRobomimicFactoryRegistration:
         ]
         handle.prepare_jobs(first_jobs)
         assert handle.env_pool is created_pools[0]
+        assert handle.env_pool.context == "forkserver"
         assert [env["task_name"] for env in handle.env_pool.instances] == [
             "Lift",
             "NutAssemblySquare",

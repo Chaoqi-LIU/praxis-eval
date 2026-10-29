@@ -50,6 +50,11 @@ and `RemotePolicy(...)` for a separate policy process.
 
 `config` is an `EvalConfig` instance. It contains generic rollout settings and benchmark-specific `env_kwargs`.
 
+Several `evaluate(...)` calls may run at once in threads of one process, for
+example one call per task. Set `EvalConfig.mp_context` to `"forkserver"` or
+`"spawn"` then: forking a process that runs other threads, or that has initialized
+CUDA, is unsafe.
+
 ## Driver Lookup
 
 ```python

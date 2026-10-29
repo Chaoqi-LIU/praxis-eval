@@ -46,6 +46,7 @@ class EvalConfig:
     env_kwargs: Mapping[str, Any] = field(default_factory=dict)
     metadata: Mapping[str, Any] = field(default_factory=dict)
     runtime_hooks: EvalRuntimeHooks = field(default_factory=EvalRuntimeHooks)
+    mp_context: str | None = None
 
 
 @dataclass(frozen=True)

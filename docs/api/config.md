@@ -26,6 +26,7 @@ class EvalConfig:
     env_kwargs: Mapping[str, Any] = field(default_factory=dict)
     metadata: Mapping[str, Any] = field(default_factory=dict)
     runtime_hooks: EvalRuntimeHooks = field(default_factory=EvalRuntimeHooks)
+    mp_context: str | None = None
 ```
 
 | Field | Meaning |
@@ -44,6 +45,7 @@ class EvalConfig:
 | `env_kwargs` | Benchmark-specific options. |
 | `metadata` | Caller-provided metadata written into result artifacts. |
 | `runtime_hooks` | Optional heartbeat callbacks. |
+| `mp_context` | Start method of the simulator worker processes (`"fork"`, `"forkserver"`, or `"spawn"`). `None` keeps the benchmark default. Benchmarks with a dedicated runtime ignore it. |
 
 ## `EvalResult`
 

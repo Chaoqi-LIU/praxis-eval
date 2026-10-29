@@ -173,8 +173,8 @@ class TestMetaworldFactoryRegistration:
         created_pools: list[object] = []
 
         class _FakeAsyncVectorEnv:
-            def __init__(self, env_fns, *, dummy_env_fn) -> None:
-                _ = dummy_env_fn
+            def __init__(self, env_fns, *, dummy_env_fn, context) -> None:
+                _ = (dummy_env_fn, context)
                 self.num_envs = len(env_fns)
                 self.instances = [env_fn() for env_fn in env_fns]
                 self.call_each_calls: list[list[tuple[int, int, str]]] = []

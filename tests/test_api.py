@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 
 from praxis_eval import (
@@ -140,3 +143,26 @@ def test_builtin_contract_registration_does_not_overwrite_real_driver(
     registry.register_driver("libero", driver)
 
     assert registry.get_driver("libero") is driver
+
+
+def test_concurrent_first_driver_lookups_wait_for_builtin_registration(
+    monkeypatch,
+) -> None:
+    import praxis_eval.envs.builtins as builtins
+    import praxis_eval.registry as registry
+
+    register_builtins = builtins.register_builtin_contract_drivers
+
+    def slow_register_builtins() -> None:
+        time.sleep(0.2)
+        register_builtins()
+
+    monkeypatch.setattr(registry, "_DRIVERS", {})
+    monkeypatch.setattr(registry, "_BUILTINS_REGISTERED", False)
+    monkeypatch.setattr(
+        builtins, "register_builtin_contract_drivers", slow_register_builtins
+    )
+    with ThreadPoolExecutor(4) as pool:
+        names = list(pool.map(lambda _: available_drivers(), range(4)))
+
+    assert all("libero" in driver_names for driver_names in names)

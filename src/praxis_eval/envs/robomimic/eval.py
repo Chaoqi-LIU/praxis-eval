@@ -45,6 +45,7 @@ def build_robomimic_eval_pool(
     tasks: list[tuple[str, int]],
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Create one persistent async eval pool for RoboMimic."""
     from praxis_eval.envs.robomimic.runtime import make_dummy_robomimic_env_fn
@@ -72,7 +73,8 @@ def build_robomimic_eval_pool(
         image_size=image_size,
         state_ports=state_ports,
     )
-    mp_context = _resolve_robomimic_mp_context()
+    if mp_context is None:
+        mp_context = _resolve_robomimic_mp_context()
     handle = EvalPoolHandle(
         env_pool=None,
         num_envs=n_envs,

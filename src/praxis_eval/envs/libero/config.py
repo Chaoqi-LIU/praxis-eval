@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
@@ -225,7 +226,10 @@ def ensure_libero_config(*, config_root: Path | None = None) -> Path:
             existing = {str(key): str(value) for key, value in loaded.items()}
 
     if existing != config:
-        with config_file.open("w", encoding="utf-8") as f:
+        # Replace atomically: other threads and processes may read it meanwhile.
+        fd, tmp_path = tempfile.mkstemp(dir=config_root, suffix=".tmp")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             yaml.safe_dump(config, f, sort_keys=True)
+        os.replace(tmp_path, config_file)
 
     return config_file

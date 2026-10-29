@@ -18,6 +18,7 @@ def build_metaworld_eval_pool(
     tasks: list[tuple[str, int]],
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Create one persistent async eval pool for MetaWorld."""
     from praxis_eval.envs.metaworld.runtime import make_dummy_metaworld_env_fn
@@ -44,6 +45,7 @@ def build_metaworld_eval_pool(
             visualization_height=int(getattr(cfg_obj, "visualization_height", 480)),
             episode_length=getattr(cfg_obj, "episode_length", None),
             dummy_env_fn=dummy_env_fn,
+            mp_context=mp_context,
         ),
     )
     return handle
@@ -98,6 +100,7 @@ def _build_env_pool_for_lane_jobs(
     visualization_height: int,
     episode_length: int | None,
     dummy_env_fn: Any,
+    mp_context: str | None,
 ) -> AsyncVectorEnv:
     env_fns = [
         _make_lane_env_fn(
@@ -114,7 +117,7 @@ def _build_env_pool_for_lane_jobs(
         )
         for lane_idx, lane_job in enumerate(lane_jobs)
     ]
-    return make_eval_env_pool(env_fns, dummy_env_fn=dummy_env_fn)
+    return make_eval_env_pool(env_fns, dummy_env_fn=dummy_env_fn, context=mp_context)
 
 
 def _prepare_metaworld_eval_jobs(
@@ -130,6 +133,7 @@ def _prepare_metaworld_eval_jobs(
     visualization_height: int,
     episode_length: int | None,
     dummy_env_fn: Any,
+    mp_context: str | None,
 ) -> None:
     first_job = next((job for job in lane_jobs if job is not None), None)
     if first_job is None:
@@ -148,6 +152,7 @@ def _prepare_metaworld_eval_jobs(
             visualization_height=visualization_height,
             episode_length=episode_length,
             dummy_env_fn=dummy_env_fn,
+            mp_context=mp_context,
         )
         return
 

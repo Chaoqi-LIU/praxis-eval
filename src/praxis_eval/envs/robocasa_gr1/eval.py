@@ -39,6 +39,7 @@ def build_robocasa_gr1_eval_pool(
     tasks: list[tuple[str, int]],
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Create a lazy worker pool; the parent process never imports GR-1."""
     _ = debug_verbose
@@ -46,7 +47,8 @@ def build_robocasa_gr1_eval_pool(
         raise ValueError("tasks must be non-empty for RoboCasa GR-1 evaluation.")
     max_steps = int(getattr(cfg_obj, "max_episode_steps", 720))
     dummy_env_fn = make_dummy_robocasa_gr1_env_fn()
-    mp_context = _resolve_gr1_mp_context()
+    if mp_context is None:
+        mp_context = _resolve_gr1_mp_context()
     handle = EvalPoolHandle(
         env_pool=None,
         num_envs=n_envs,

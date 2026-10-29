@@ -42,13 +42,15 @@ def make_vector_env(
     episode_length: int | None = None,
     seed: int = 0,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalVectorEnv:
     ...
 ```
 
 `env` is a driver name whose benchmark has an eval pool: `libero`, `metaworld`,
 `robocasa`, `robocasa_gr1`, or `robomimic`. `env_kwargs` is the benchmark config,
-the same mapping as `EvalConfig.env_kwargs`.
+the same mapping as `EvalConfig.env_kwargs`, and `mp_context` is the worker start
+method, as in `EvalConfig.mp_context`.
 
 Each lane runs one `(task_group, task_id)` task for its whole lifetime. Lanes may
 repeat a task or mix tasks. Valid pairs are the ones evaluation iterates over:

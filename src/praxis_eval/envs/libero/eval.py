@@ -20,6 +20,7 @@ def make_libero_eval_pool(
     *,
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Create one persistent async vec pool for LIBERO eval lanes."""
     cfg_obj = _coerce_libero_env_config(env_cfg)
@@ -64,6 +65,7 @@ def make_libero_eval_pool(
             control_mode=cfg_obj.control_mode,
             dummy_env_fn=dummy_env_fn,
             debug_verbose=debug_verbose,
+            mp_context=mp_context,
         ),
     )
     return handle
@@ -128,6 +130,7 @@ def _build_env_pool_for_lane_jobs(
     control_mode: str,
     dummy_env_fn: Any,
     debug_verbose: bool,
+    mp_context: str | None,
 ) -> AsyncVectorEnv:
     n_envs = len(lane_jobs)
     suites: dict[str, Any] = {}
@@ -154,7 +157,7 @@ def _build_env_pool_for_lane_jobs(
         )
         for lane_idx, lane_job in enumerate(lane_jobs)
     ]
-    return make_eval_env_pool(env_fns, dummy_env_fn=dummy_env_fn)
+    return make_eval_env_pool(env_fns, dummy_env_fn=dummy_env_fn, context=mp_context)
 
 
 def build_libero_eval_pool(
@@ -162,6 +165,7 @@ def build_libero_eval_pool(
     tasks: list[tuple[str, int]],
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Persistent eval pool builder for LIBERO (supports multiple suites)."""
     _ = tasks
@@ -169,6 +173,7 @@ def build_libero_eval_pool(
         cfg_obj,
         n_envs=n_envs,
         debug_verbose=debug_verbose,
+        mp_context=mp_context,
     )
 
 
@@ -183,6 +188,7 @@ def _prepare_libero_eval_jobs(
     control_mode: str | None = None,
     dummy_env_fn: Any | None = None,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> None:
     active_lane_indices = [idx for idx, job in enumerate(lane_jobs) if job is not None]
     if len(active_lane_indices) == 0:
@@ -215,6 +221,7 @@ def _prepare_libero_eval_jobs(
                 control_mode=control_mode,
                 dummy_env_fn=dummy_env_fn,
                 debug_verbose=debug_verbose,
+                mp_context=mp_context,
             )
             return
         env_pool = cast(AsyncVectorEnv, env_pool_or_handle.env_pool)

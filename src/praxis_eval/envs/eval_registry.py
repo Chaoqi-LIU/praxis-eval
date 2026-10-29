@@ -47,6 +47,7 @@ class EvalDriverContext:
     progress_heartbeat: Callable[[str], None]
     action_spec: ActionSpec | None = None
     eval_rollout_failure_retries: int = 1
+    eval_mp_context: str | None = None
 
 
 def register_env_runtime_driver(name: str, driver: EnvRuntimeDriver | str) -> None:
@@ -103,6 +104,7 @@ def _run_async_pool_eval(
         tasks=tasks,
         n_envs=context.num_parallel_env,
         debug_verbose=context.eval_debug_verbose,
+        mp_context=context.eval_mp_context,
     )
     try:
         context.phase_heartbeat("after_pool_spaces_validated")

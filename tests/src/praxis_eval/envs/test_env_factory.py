@@ -18,6 +18,7 @@ from praxis_eval.envs.factory import (
     build_env_config,
     infer_eval_env_target,
     make_env,
+    make_eval_async_pool,
     register_async_env_builder,
     register_env_builder,
 )
@@ -25,9 +26,10 @@ from praxis_eval.envs.libero.eval import make_libero_eval_pool
 
 
 class _FakeAsyncVectorEnv:
-    def __init__(self, env_fns, *, dummy_env_fn):
+    def __init__(self, env_fns, *, dummy_env_fn, context):
         self.env_fns = env_fns
         self.dummy_env_fn = dummy_env_fn
+        self.context = context
         self.num_envs = len(env_fns)
         self.instances = [fn() for fn in env_fns]
         self.call_each_calls = []
@@ -327,6 +329,37 @@ if loaded:
         assert out == {"custom_suite": {0: "custom_env"}}
         assert captured["cfg_type"] == "libero"
         assert captured["n_envs"] == 3
+
+    def test_eval_pool_builders_without_mp_context_work_until_it_is_set(
+        self, monkeypatch
+    ):
+        factory_mod = importlib.import_module("praxis_eval.envs.factory")
+        calls: list[tuple] = []
+
+        def _old_builder(cfg_obj, tasks, n_envs, debug_verbose):
+            calls.append((cfg_obj.type, tasks, n_envs, debug_verbose))
+            return "pool"
+
+        monkeypatch.setitem(
+            factory_mod._EVAL_POOL_BUILDER_REGISTRY, "libero", _old_builder
+        )
+        cfg = {"type": "libero", "task": "libero_10"}
+        tasks = [("libero_10", 0)]
+
+        assert make_eval_async_pool(cfg, tasks=tasks, n_envs=2) == "pool"
+        assert calls == [("libero", tasks, 2, False)]
+        with pytest.raises(TypeError, match="mp_context"):
+            make_eval_async_pool(cfg, tasks=tasks, n_envs=2, mp_context="spawn")
+
+        def _builder(cfg_obj, tasks, n_envs, debug_verbose, mp_context=None):
+            return mp_context
+
+        monkeypatch.setitem(factory_mod._EVAL_POOL_BUILDER_REGISTRY, "libero", _builder)
+        assert make_eval_async_pool(cfg, tasks=tasks, n_envs=2) is None
+        assert (
+            make_eval_async_pool(cfg, tasks=tasks, n_envs=2, mp_context="spawn")
+            == "spawn"
+        )
 
     def test_direct_env_make_env_fails_without_local_builder(self, monkeypatch):
         factory_mod = importlib.import_module("praxis_eval.envs.factory")
