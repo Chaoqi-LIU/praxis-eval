@@ -51,6 +51,7 @@ __all__ = [
     "EvalPhaseWatchdog",
     "EvalResult",
     "EvalRuntimeHooks",
+    "EvalVectorEnv",
     "LocalPolicy",
     "Observation",
     "ObservationKey",
@@ -64,6 +65,7 @@ __all__ = [
     "evaluate",
     "get_driver",
     "infer_eval_env_target",
+    "make_vector_env",
     "normalize_batched_action",
     "optional_env_task",
     "optional_env_task_ids",
@@ -102,4 +104,8 @@ def __getattr__(name: str):
         from praxis_eval.evaluation.overrides import normalize_eval_overrides
 
         return normalize_eval_overrides
+    if name in {"EvalVectorEnv", "make_vector_env"}:
+        from praxis_eval import vector_env
+
+        return getattr(vector_env, name)
     raise AttributeError(name)

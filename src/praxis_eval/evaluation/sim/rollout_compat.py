@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import multiprocessing
 import queue
@@ -17,9 +16,12 @@ from typing import Any, Protocol, cast
 import gymnasium as gym
 import numpy as np
 import torch
-from lerobot.scripts.lerobot_eval import rollout as lerobot_rollout
+from lerobot.envs.utils import add_envs_task, preprocess_observation
+from lerobot.utils.constants import ACTION
 from lerobot.utils.io_utils import write_video
+from lerobot.utils.utils import inside_slurm
 from torch import nn
+from tqdm import trange
 
 from praxis_eval.evaluation.sim.metrics import TaskEvalResult
 
@@ -483,45 +485,117 @@ def _extract_task_descriptions(env: gym.vector.VectorEnv) -> list[str]:
     return [""] * int(getattr(env, "num_envs", 0))
 
 
-def _compact_rollout_trange(trange_fn):
-    """Wrap LeRobot's rollout progress bar with a shorter default description."""
+def process_observation(
+    env: Any,
+    observation: dict[str, Any],
+    env_preprocessor: Callable[[dict[str, Any]], dict[str, Any]],
+) -> dict[str, Any]:
+    """Turn one raw vector-env observation batch into the batch policies see.
 
-    class _ProgressProxy:
-        def __init__(self, progbar):
-            self._progbar = progbar
-
-        def set_postfix(self, ordered_dict=None, refresh=True, **kwargs):
-            payload = {}
-            if ordered_dict is not None:
-                payload.update(dict(ordered_dict))
-            payload.update(kwargs)
-            if "running_success_rate" in payload:
-                payload["succ_rate"] = payload.pop("running_success_rate")
-            return self._progbar.set_postfix(payload, refresh=refresh)
-
-        def __getattr__(self, name: str):
-            return getattr(self._progbar, name)
-
-    def _wrapped(*args, **kwargs):
-        desc = kwargs.get("desc")
-        if isinstance(desc, str) and desc.startswith("Running rollout with at most "):
-            kwargs["desc"] = "Rollout"
-        return _ProgressProxy(trange_fn(*args, **kwargs))
-
-    return _wrapped
+    Applies LeRobot's ``preprocess_observation``, adds the per-lane task strings
+    with ``add_envs_task``, and runs the env preprocessor. ``env`` must expose
+    LeRobot's task attributes, as ``_RolloutEnvCompat`` does. The eval rollout
+    and ``EvalVectorEnv`` both call this function, so they cannot drift apart.
+    """
+    observation = preprocess_observation(observation)
+    observation = add_envs_task(env, observation)
+    return env_preprocessor(observation)
 
 
-@contextlib.contextmanager
-def _compact_lerobot_rollout_progress():
-    """Temporarily shorten LeRobot rollout tqdm descriptions."""
-    import lerobot.scripts.lerobot_eval as lerobot_eval_module
+def postprocess_action(
+    action: torch.Tensor,
+    env_postprocessor: Callable[[dict[str, Any]], dict[str, Any]],
+) -> np.ndarray:
+    """Run the env postprocessor on a batched action and return a numpy array."""
+    action_numpy = env_postprocessor({ACTION: action})[ACTION].to("cpu").numpy()
+    if action_numpy.ndim != 2:
+        raise ValueError(
+            f"Action dimensions should be (batch, action_dim), got {action_numpy.shape}."
+        )
+    return action_numpy
 
-    original_trange = lerobot_eval_module.trange
-    lerobot_eval_module.trange = _compact_rollout_trange(original_trange)
-    try:
-        yield
-    finally:
-        lerobot_eval_module.trange = original_trange
+
+def step_successes(info: dict[str, Any], num_envs: int) -> np.ndarray:
+    """Return per-lane success flags for one vector-env step.
+
+    Success is read from ``info["final_info"]["is_success"]``, the same field
+    LeRobot's rollout reads, so lanes that did not finish report ``False``.
+    """
+    if "final_info" not in info:
+        return np.zeros(num_envs, dtype=bool)
+    final_info = info["final_info"]
+    if not isinstance(final_info, dict):
+        raise RuntimeError(
+            "Unsupported `final_info` format: expected dict (Gymnasium >= 1.0)."
+        )
+    return np.asarray(final_info["is_success"], dtype=bool)
+
+
+def _rollout(
+    *,
+    env: Any,
+    policy: nn.Module,
+    env_preprocessor: Callable[[Any], Any],
+    env_postprocessor: Callable[[Any], Any],
+    preprocessor: Callable[[Any], Any],
+    postprocessor: Callable[[Any], Any],
+    seeds: list[int] | None,
+    render_callback: Callable[[Any], None] | None,
+) -> dict[str, torch.Tensor]:
+    """Run one batched episode per lane until every lane is done.
+
+    Follows LeRobot 0.4.4's ``rollout``: lanes keep stepping after they finish,
+    ``done`` is cumulative, and every lane is done after ``_max_episode_steps``
+    steps. Returns ``(num_envs, steps)`` tensors for ``reward``, ``success``, and
+    ``done``.
+    """
+    policy.reset()
+    observation, _ = env.reset(seed=seeds)
+    if render_callback is not None:
+        render_callback(env)
+
+    num_envs = int(env.num_envs)
+    max_steps = int(env.call("_max_episode_steps")[0])
+    done = np.zeros(num_envs, dtype=bool)
+    rewards: list[torch.Tensor] = []
+    successes: list[torch.Tensor] = []
+    dones: list[torch.Tensor] = []
+    with trange(
+        max_steps, desc="Rollout", disable=inside_slurm(), leave=False
+    ) as progbar:
+        step = 0
+        while not np.all(done) and step < max_steps:
+            batch = preprocessor(
+                process_observation(env, observation, env_preprocessor)
+            )
+            with torch.inference_mode():
+                action = policy.select_action(batch)
+            action_numpy = postprocess_action(postprocessor(action), env_postprocessor)
+
+            observation, reward, terminated, truncated, info = env.step(action_numpy)
+            if render_callback is not None:
+                render_callback(env)
+
+            done = terminated | truncated | done
+            if step + 1 == max_steps:
+                done = np.ones_like(done, dtype=bool)
+            rewards.append(torch.from_numpy(np.asarray(reward)))
+            successes.append(torch.from_numpy(step_successes(info, num_envs)))
+            dones.append(torch.from_numpy(np.asarray(done, dtype=bool)))
+
+            step += 1
+            succ_rate = torch.stack(successes, dim=1).any(dim=1).float().mean()
+            progbar.set_postfix({"succ_rate": f"{succ_rate.item() * 100:.1f}%"})
+            progbar.update()
+
+    if hasattr(policy, "use_original_modules"):
+        policy.use_original_modules()
+
+    return {
+        "reward": torch.stack(rewards, dim=1),
+        "success": torch.stack(successes, dim=1),
+        "done": torch.stack(dones, dim=1),
+    }
 
 
 def _terminal_rollout_metrics(
@@ -642,20 +716,18 @@ def evaluate_policy_on_pooled_env(
             timeout_sec=float(step_timeout_sec),
             phase_heartbeat=phase_heartbeat,
         )
-    with _compact_lerobot_rollout_progress():
-        rollout_data = lerobot_rollout(
-            env=cast(Any, rollout_env),
-            policy=cast(Any, policy),
-            env_preprocessor=env_preprocessor,
-            env_postprocessor=env_postprocessor,
-            preprocessor=preprocessor,
-            postprocessor=postprocessor,
-            seeds=seeds,
-            return_observations=False,
-            render_callback=_render_frame
-            if any(int(x) > 0 for x in max_episodes_rendered_by_env)
-            else None,
-        )
+    rollout_data = _rollout(
+        env=rollout_env,
+        policy=policy,
+        env_preprocessor=env_preprocessor,
+        env_postprocessor=env_postprocessor,
+        preprocessor=preprocessor,
+        postprocessor=postprocessor,
+        seeds=seeds,
+        render_callback=_render_frame
+        if any(int(x) > 0 for x in max_episodes_rendered_by_env)
+        else None,
+    )
 
     sum_rewards, max_rewards, successes, lengths, done_indices = (
         _terminal_rollout_metrics(rollout_data)

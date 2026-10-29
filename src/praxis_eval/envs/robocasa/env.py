@@ -434,24 +434,21 @@ class RobocasaEnv(gym.Env):
     ) -> tuple[dict[str, Any], float, bool, bool, dict[str, Any]]:
         self._step_count += 1
         native_action = self._prepare_native_action(action)
-        raw_obs, _reward, terminated, info = self.env.step(native_action)
+        raw_obs, _reward, raw_terminated, info = self.env.step(native_action)
         is_success = bool(self.env._check_success())
         reward = 1.0 if is_success else 0.0
         info = dict(info)
         info["is_success"] = is_success
-        self._done = (
-            self._done
-            or terminated
-            or reward >= 1.0
-            or self.env.timestep >= self._max_episode_steps
-        )
+        terminated = bool(raw_terminated) or is_success
+        truncated = not terminated and self.env.timestep >= self._max_episode_steps
+        self._done = self._done or terminated or truncated
         if self._done:
             info["final_info"] = {
                 "task": self.task_name,
-                "done": bool(terminated),
+                "done": bool(raw_terminated),
                 "is_success": bool(is_success),
             }
-        return self._extract_obs(raw_obs), reward, self._done, False, info
+        return self._extract_obs(raw_obs), reward, terminated, truncated, info
 
     def _prepare_native_action(self, action: np.ndarray) -> np.ndarray:
         native_action = _lerobot_action_to_native_order(action)

@@ -67,6 +67,7 @@ export default defineConfig({
           { text: "Config", link: "/api/config" },
           { text: "Policies", link: "/api/policies" },
           { text: "Contracts", link: "/api/contracts" },
+          { text: "Vector Env", link: "/api/vector-env" },
         ],
       },
       {

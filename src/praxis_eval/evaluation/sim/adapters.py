@@ -49,7 +49,7 @@ class LocalPolicyAdapter(nn.Module):
 
     @torch.inference_mode()
     def select_action(self, batch: dict[str, Any]) -> Tensor:
-        observations = _split_batched_observations(batch)
+        observations = split_policy_observations(policy_observation_batch(batch))
         action = self.policy.act(
             observations,
             action_spec=self.action_spec,
@@ -72,16 +72,17 @@ class LocalPolicyAdapter(nn.Module):
         return self._diagnostics.summary()
 
 
-def _split_batched_observations(
-    batch: dict[str, Any],
-) -> list[dict[str, ObservationValue]]:
-    """Split a batch-first observation dict into per-example numpy observations.
+def policy_observation_batch(batch: dict[str, Any]) -> dict[str, Any]:
+    """Return the observation values policies receive, still batched.
 
-    Scalar metadata is broadcast across all examples. Tensor, ndarray, and
-    sequence values determine and validate the batch size.
+    Drops rollout bookkeeping keys and ``None`` values, turns tensors into numpy
+    arrays and sequences into lists, and keeps scalar metadata as one scalar
+    shared by every example. ``LocalPolicyAdapter`` splits this per example for
+    ``Policy.act`` with ``split_policy_observations``; ``EvalVectorEnv`` returns
+    it as is.
     """
     batch_size = _infer_batch_size(batch)
-    observations: list[dict[str, ObservationValue]] = [{} for _ in range(batch_size)]
+    values: dict[str, Any] = {}
 
     for key, value in batch.items():
         if key in _ROLLOUT_BOOKKEEPING_KEYS or value is None:
@@ -90,20 +91,16 @@ def _split_batched_observations(
         if isinstance(value, Tensor):
             array = value.detach().cpu().numpy()
             _validate_batch_length(key, int(array.shape[0]), batch_size)
-            for index in range(batch_size):
-                observations[index][key] = np.asarray(array[index])
+            values[key] = array
             continue
 
         if isinstance(value, np.ndarray):
             _validate_batch_length(key, int(value.shape[0]), batch_size)
-            for index in range(batch_size):
-                observations[index][key] = np.asarray(value[index])
+            values[key] = value
             continue
 
         if isinstance(value, _SCALAR_OBSERVATION_TYPES):
-            scalar = _as_python_scalar(value)
-            for index in range(batch_size):
-                observations[index][key] = scalar
+            values[key] = _as_python_scalar(value)
             continue
 
         if isinstance(value, Sequence) and not isinstance(
@@ -115,13 +112,35 @@ def _split_batched_observations(
                     f"Observation key {key!r} must be tensor-like or a sequence of scalars, "
                     f"got sequence element types {[type(item).__name__ for item in value]}."
                 )
-            for index, item in enumerate(value):
-                observations[index][key] = _as_python_scalar(item)
+            values[key] = [_as_python_scalar(item) for item in value]
             continue
 
         raise TypeError(
             f"Unsupported observation value type for key {key!r}: {type(value)!r}."
         )
+
+    return values
+
+
+def split_policy_observations(
+    values: dict[str, Any],
+) -> list[dict[str, ObservationValue]]:
+    """Split ``policy_observation_batch`` output into per-example observations.
+
+    These are the observations ``Policy.act`` receives. Scalar metadata is shared
+    by all examples.
+    """
+    batch_size = _infer_batch_size(values)
+    observations: list[dict[str, ObservationValue]] = [{} for _ in range(batch_size)]
+
+    for key, value in values.items():
+        for index, observation in enumerate(observations):
+            if isinstance(value, np.ndarray):
+                observation[key] = np.asarray(value[index])
+            elif isinstance(value, list):
+                observation[key] = value[index]
+            else:
+                observation[key] = value
 
     return observations
 
