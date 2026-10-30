@@ -10,7 +10,7 @@ import logging
 import multiprocessing
 from typing import Any, cast
 
-from praxis_eval.envs.async_vector_env import AsyncVectorEnv
+from praxis_eval.envs.async_vector_env import AsyncVectorEnv, make_eval_env_pool
 from praxis_eval.envs.eval_pool import EvalLaneJob, EvalPoolHandle
 from praxis_eval.envs.robocasa.tasks import get_subtasks, get_task_horizon
 
@@ -153,7 +153,7 @@ def _build_env_pool_for_lane_jobs(
         )
         for lane_idx, lane_job in enumerate(lane_jobs)
     ]
-    return AsyncVectorEnv(
+    return make_eval_env_pool(
         env_fns,
         dummy_env_fn=dummy_env_fn,
         context=mp_context,

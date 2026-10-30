@@ -326,7 +326,7 @@ class TestRobocasaFactoryRegistration:
                 "max_episode_steps": env._max_episode_steps,
             }
 
-        monkeypatch.setattr(robocasa_eval, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+        monkeypatch.setattr(robocasa_eval, "make_eval_env_pool", _FakeAsyncVectorEnv)
         monkeypatch.setattr(
             runtime_mod,
             "build_robocasa_env_with_retries",

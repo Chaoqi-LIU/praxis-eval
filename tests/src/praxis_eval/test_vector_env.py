@@ -10,7 +10,7 @@ from gymnasium.vector.vector_env import AutoresetMode
 from gymnasium.wrappers import TimeLimit
 
 from praxis_eval.contracts import ActionSpec
-from praxis_eval.envs.async_vector_env import AsyncVectorEnv
+from praxis_eval.envs.async_vector_env import make_eval_env_pool
 from praxis_eval.envs.eval_pool import EvalLaneJob, EvalPoolHandle
 from praxis_eval.evaluation.sim.adapters import LocalPolicyAdapter
 from praxis_eval.evaluation.sim.rollout_compat import evaluate_policy_on_pooled_env
@@ -24,7 +24,8 @@ from praxis_eval.vector_env import EvalVectorEnv
 class _LaneEnv(gym.Env):
     """LIBERO-like lane: never truncates, and task "a" succeeds at step 2.
 
-    ``agent_pos`` records ``(reset seed, episode_index, step, last action)``.
+    ``agent_pos`` records ``(reset seed, episode_index, step, last action)``;
+    ``resets`` and ``steps`` count calls.
     """
 
     def __init__(self, job: EvalLaneJob) -> None:
@@ -42,16 +43,20 @@ class _LaneEnv(gym.Env):
         self._max_episode_steps = 10 if job.task_group == "a" else 3
         self._seed = 0
         self._t = 0
+        self.resets = 0
+        self.steps = 0
 
     def prepare_eval_job(self, task_id, episode_index, task_group=None) -> None:
         self.episode_index = int(episode_index)
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
+        self.resets += 1
         self._seed, self._t = (0 if seed is None else int(seed)), 0
         return self._obs(0.0), {}
 
     def step(self, action):
+        self.steps += 1
         self._t += 1
         success = self._success_at is not None and self._t >= self._success_at
         info = {"is_success": success}
@@ -74,7 +79,9 @@ def _make_eval_pool(num_envs: int, prepared: list[list[EvalLaneJob]]):
     def _prepare_jobs(lane_jobs):
         prepared.append(list(lane_jobs))
         if handle.env_pool is None:
-            handle.env_pool = AsyncVectorEnv([partial(_LaneEnv, j) for j in lane_jobs])
+            handle.env_pool = make_eval_env_pool(
+                [partial(_LaneEnv, j) for j in lane_jobs]
+            )
             return
         handle.env_pool.call_each(
             "prepare_eval_job",
@@ -298,3 +305,25 @@ def test_observations_match_what_evaluate_feeds_policies() -> None:
                 assert type(lane_value) is type(value)
                 np.testing.assert_array_equal(lane_value, value)
                 assert np.asarray(lane_value).dtype == np.asarray(value).dtype
+
+
+def test_finished_eval_lanes_wait_without_stepping_or_resetting() -> None:
+    jobs = [EvalLaneJob("a", 0, 0, 0), EvalLaneJob("b", 1, 0, 1)]
+    env_pool = make_eval_env_pool([partial(_LaneEnv, job) for job in jobs])
+    try:
+        # Lane "a" succeeds at step 2, then waits while lane "b" runs to step 5.
+        env_pool.set_attr("_max_episode_steps", [10, 5])
+        results = evaluate_policy_on_pooled_env(
+            env=env_pool,
+            policy=LocalPolicyAdapter(_RecordingPolicy(), device="cpu"),
+            seeds=[0, 1],
+        )
+        resets = env_pool.call("resets")
+        steps = env_pool.call("steps")
+    finally:
+        env_pool.close(terminate=True)
+
+    assert [result.successes for result in results] == [[True], [False]]
+    assert [result.lengths for result in results] == [[2], [5]]
+    assert resets == (1, 1)
+    assert steps == (2, 5)

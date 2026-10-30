@@ -327,7 +327,7 @@ class TestRobomimicFactoryRegistration:
                 "max_episode_steps": env._max_episode_steps,
             }
 
-        monkeypatch.setattr(robomimic_eval, "AsyncVectorEnv", _FakeAsyncVectorEnv)
+        monkeypatch.setattr(robomimic_eval, "make_eval_env_pool", _FakeAsyncVectorEnv)
         monkeypatch.setattr(
             runtime_mod,
             "build_robomimic_env_with_retries",
@@ -408,7 +408,9 @@ class TestRobomimicFactoryRegistration:
             def close(self, *, terminate=False):
                 self.closed_with_terminate = bool(terminate)
 
-        monkeypatch.setattr(robomimic_eval, "AsyncVectorEnv", _FailingAsyncVectorEnv)
+        monkeypatch.setattr(
+            robomimic_eval, "make_eval_env_pool", _FailingAsyncVectorEnv
+        )
         monkeypatch.setattr(
             runtime_mod,
             "make_dummy_robomimic_env_fn",

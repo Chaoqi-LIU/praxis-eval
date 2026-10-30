@@ -12,6 +12,7 @@ from functools import partial
 from typing import Any
 
 import gymnasium as gym
+import numpy as np
 
 from praxis_eval.envs.libero.config import ensure_libero_config
 from praxis_eval.envs.libero.spec import (
@@ -96,6 +97,35 @@ class LiberoEnv(_LeRobotLiberoEnv):
             _right_arm_controller(robot).use_delta = use_delta
 
         return self._format_raw_obs(raw_obs), {"is_success": False}
+
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[dict[str, Any], float, bool, bool, dict[str, Any]]:
+        # LeRobot's step also resets the env when the episode terminates, and
+        # vector envs reset a finished lane again, so it rebuilt the scene twice.
+        if action.ndim != 1:
+            raise ValueError(
+                f"Expected a 1-D action of shape (action_dim,), got {action.shape}."
+            )
+        raw_obs, reward, done, info = self._env.step(action)
+        is_success = bool(self._env.check_success())
+        terminated = bool(done) or is_success
+        info.update(
+            {
+                "task": self.task,
+                "task_id": self.task_id,
+                "done": done,
+                "is_success": is_success,
+            }
+        )
+        if terminated:
+            info["final_info"] = {
+                "task": self.task,
+                "task_id": self.task_id,
+                "done": bool(done),
+                "is_success": is_success,
+            }
+        return self._format_raw_obs(raw_obs), reward, terminated, False, info
 
     def _format_raw_obs(self, raw_obs: Mapping[str, Any]) -> dict[str, Any]:
         images = {

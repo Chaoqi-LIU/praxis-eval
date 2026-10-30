@@ -111,6 +111,11 @@ For async pool benchmarks, provide:
 - a `_max_episode_steps` attribute on each worker env: the evaluator ends each episode after that many steps, even if the env never truncates;
 - an eval pool builder registered with the factory.
 
+Build the worker pool with `praxis_eval.envs.async_vector_env.make_eval_env_pool`.
+Its lanes do not autoreset and, once the env terminates or truncates, return that
+final transition without stepping the env until the next wave resets them. The env itself should
+report termination and `info["final_info"]["is_success"]` and never reset itself.
+
 The existing LIBERO, RoboCasa, RoboMimic, and MetaWorld drivers are the best references.
 
 Register the family:
