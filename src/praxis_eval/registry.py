@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Protocol
 
 from praxis_eval.contracts import EnvContract
@@ -27,6 +28,7 @@ class EvalDriver(Protocol):
 
 _DRIVERS: dict[str, EvalDriver] = {}
 _BUILTINS_REGISTERED = False
+_BUILTINS_LOCK = threading.Lock()
 
 
 def register_driver(name: str, driver: EvalDriver, *, replace: bool = True) -> None:
@@ -66,7 +68,11 @@ def _ensure_builtin_drivers_registered() -> None:
     global _BUILTINS_REGISTERED
     if _BUILTINS_REGISTERED:
         return
-    _BUILTINS_REGISTERED = True
-    from praxis_eval.envs.builtins import register_builtin_contract_drivers
+    # Concurrent first calls wait until registration is complete.
+    with _BUILTINS_LOCK:
+        if _BUILTINS_REGISTERED:
+            return
+        from praxis_eval.envs.builtins import register_builtin_contract_drivers
 
-    register_builtin_contract_drivers()
+        register_builtin_contract_drivers()
+        _BUILTINS_REGISTERED = True

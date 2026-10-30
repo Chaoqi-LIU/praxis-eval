@@ -51,5 +51,6 @@ SimplerEnv and MS-HAB use a subprocess path. The evaluator starts or uses a `pra
 | `rollout_failure_retries` | Retry count for rollout failures. |
 | `policy_kwargs` | Extra kwargs forwarded to the policy adapter. |
 | `env_kwargs` | Benchmark-specific environment settings. |
+| `mp_context` | Start method of the simulator worker processes. |
 
 Benchmark-specific options belong in `env_kwargs`, not in the policy adapter.

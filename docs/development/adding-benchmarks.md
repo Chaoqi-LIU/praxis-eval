@@ -109,7 +109,7 @@ For async pool benchmarks, provide:
 - a real env factory for workers;
 - a worker wrapper with `prepare_eval_job(...)`;
 - a `_max_episode_steps` attribute on each worker env: the evaluator ends each episode after that many steps, even if the env never truncates;
-- an eval pool builder registered with the factory.
+- an eval pool builder registered with the factory. It takes `(cfg_obj, tasks, n_envs, debug_verbose)` and, optionally, a keyword `mp_context`: the worker start method, which it passes as the `context` of its `AsyncVectorEnv`. A builder without the keyword keeps working while `mp_context` is unset; setting it then raises `TypeError`.
 
 Build the worker pool with `praxis_eval.envs.async_vector_env.make_eval_env_pool`.
 Its lanes do not autoreset and, once the env terminates or truncates, return that

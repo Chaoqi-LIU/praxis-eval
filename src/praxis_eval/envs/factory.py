@@ -194,10 +194,14 @@ def make_eval_async_pool(
     tasks: list[tuple[str, int]],
     n_envs: int,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalPoolHandle:
     """Create one persistent async eval pool for the configured env type.
 
     This is backend-agnostic; env-specific details come from registered builders.
+    ``mp_context`` is the multiprocessing start method of the env workers;
+    ``None`` keeps the builder's default. Builders take it as an optional
+    keyword, so builders without it keep working while it is ``None``.
     """
     if n_envs < 1:
         raise ValueError(f"n_envs must be >= 1, got {n_envs}.")
@@ -212,7 +216,10 @@ def make_eval_async_pool(
             f"No persistent eval pool builder registered for env type {env_type!r}. "
             f"Available: {', '.join(available_eval_pool_env_types()) or '(none)'}"
         )
-    return _load_callable(builder)(cfg_obj, tasks, n_envs, debug_verbose)
+    build = _load_callable(builder)
+    if mp_context is None:
+        return build(cfg_obj, tasks, n_envs, debug_verbose)
+    return build(cfg_obj, tasks, n_envs, debug_verbose, mp_context=mp_context)
 
 
 def infer_eval_env_target(dataset_name: str) -> tuple[str, str]:

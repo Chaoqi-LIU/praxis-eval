@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
@@ -225,7 +226,17 @@ def ensure_libero_config(*, config_root: Path | None = None) -> Path:
             existing = {str(key): str(value) for key, value in loaded.items()}
 
     if existing != config:
-        with config_file.open("w", encoding="utf-8") as f:
-            yaml.safe_dump(config, f, sort_keys=True)
+        # Replace atomically: other threads and processes may read it meanwhile.
+        # Mode 0o666 lets the umask apply as with a plain open(); mkstemp would
+        # leave the shared config readable only by its creator.
+        tmp_path = config_root / f".config.yaml.{uuid.uuid4().hex}.tmp"
+        fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                yaml.safe_dump(config, f, sort_keys=True)
+            os.replace(tmp_path, config_file)
+        except BaseException:
+            tmp_path.unlink(missing_ok=True)
+            raise
 
     return config_file

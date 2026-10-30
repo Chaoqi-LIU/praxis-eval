@@ -95,6 +95,7 @@ class BuiltinEnvDriver:
                 eval_debug_verbose=bool(config.debug_verbose),
                 eval_step_timeout_sec=config.step_timeout_sec,
                 eval_rollout_failure_retries=int(config.rollout_failure_retries),
+                eval_mp_context=config.mp_context,
                 eval_policy_kwargs=dict(config.policy_kwargs),
                 eval_device="cpu",
                 server_address=str(remote_address) if remote_address else None,

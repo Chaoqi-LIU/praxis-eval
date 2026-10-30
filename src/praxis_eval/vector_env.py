@@ -43,6 +43,7 @@ def make_vector_env(
     episode_length: int | None = None,
     seed: int = 0,
     debug_verbose: bool = False,
+    mp_context: str | None = None,
 ) -> EvalVectorEnv:
     """Build an ``EvalVectorEnv`` from the same env pool ``evaluate(env, ...)`` uses.
 
@@ -56,6 +57,8 @@ def make_vector_env(
         seed: Base seed. The k-th episode of a task resets with the seed the eval
             runner would give it, ``seed + episode_index``.
         debug_verbose: Keep benchmark startup output.
+        mp_context: Multiprocessing start method of the env workers, the same
+            as ``EvalConfig.mp_context``.
     """
     contract = get_driver(env).contract
     env_cfg = {**dict(env_kwargs or {}), "type": contract.env_type}
@@ -69,6 +72,7 @@ def make_vector_env(
         tasks=list(dict.fromkeys(lanes)),
         n_envs=len(lanes),
         debug_verbose=debug_verbose,
+        mp_context=mp_context,
     )
     return EvalVectorEnv(
         eval_pool,
