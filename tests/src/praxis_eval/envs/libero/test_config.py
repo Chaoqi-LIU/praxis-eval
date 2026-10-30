@@ -3,30 +3,39 @@ from __future__ import annotations
 import importlib
 from types import SimpleNamespace
 
+import pytest
 import yaml
 
 
-def test_ensure_libero_config_writes_installed_package_paths(
-    tmp_path, monkeypatch
-) -> None:
+def _stub_installed_libero(tmp_path, monkeypatch):
     config_mod = importlib.import_module("praxis_eval.envs.libero.config")
-
     benchmark_root = tmp_path / "site-packages" / "libero" / "libero"
     benchmark_root.mkdir(parents=True)
     fake_origin = benchmark_root / "__init__.py"
     fake_origin.write_text("# stub\n", encoding="utf-8")
-
     monkeypatch.setattr(
         config_mod.importlib.util,
         "find_spec",
         lambda name: SimpleNamespace(origin=str(fake_origin)),
     )
+    return config_mod, benchmark_root
+
+
+def test_ensure_libero_config_writes_installed_package_paths(
+    tmp_path, monkeypatch
+) -> None:
+    config_mod, benchmark_root = _stub_installed_libero(tmp_path, monkeypatch)
 
     config_root = tmp_path / "cfg"
     config_file = config_mod.ensure_libero_config(config_root=config_root)
 
     assert config_file == config_root / "config.yaml"
     assert config_file.exists()
+    # Same permissions as a file created with a plain open(), so a shared
+    # install's config stays readable by other users.
+    reference = config_root / "reference.txt"
+    reference.write_text("", encoding="utf-8")
+    assert config_file.stat().st_mode == reference.stat().st_mode
     assert config_mod.os.environ["LIBERO_CONFIG_PATH"] == str(config_root.resolve())
 
     data = yaml.safe_load(config_file.read_text(encoding="utf-8"))
@@ -37,6 +46,21 @@ def test_ensure_libero_config_writes_installed_package_paths(
         "datasets": str((benchmark_root.parent / "datasets").resolve()),
         "assets": str((benchmark_root / "assets").resolve()),
     }
+
+
+def test_ensure_libero_config_removes_temp_file_when_write_fails(
+    tmp_path, monkeypatch
+) -> None:
+    config_mod, _ = _stub_installed_libero(tmp_path, monkeypatch)
+
+    def failing_dump(*args, **kwargs):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(config_mod.yaml, "safe_dump", failing_dump)
+    config_root = tmp_path / "cfg"
+    with pytest.raises(RuntimeError, match="disk full"):
+        config_mod.ensure_libero_config(config_root=config_root)
+    assert list(config_root.iterdir()) == []
 
 
 def test_libero_env_config_builds_camera_features() -> None:
